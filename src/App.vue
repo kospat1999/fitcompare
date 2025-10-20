@@ -1,0 +1,1654 @@
+<template>
+  <div class="app">
+    <!-- Login Screen -->
+    <LoginForm v-if="!isLoggedIn" @login-success="handleLoginSuccess" />
+
+    <!-- Main App -->
+    <div v-else>
+      <header class="header">
+        <div class="logo">
+          <div class="logo-icon">⚡</div>
+          <div class="logo-text">
+            <span class="fit">Fit</span><span class="compare">Compare</span>
+          </div>
+        </div>
+        <nav class="nav-tabs">
+          <button
+            class="nav-tab"
+            :class="{ active: activeTab === 'comparison' }"
+            @click="activeTab = 'comparison'"
+          >
+            Porównanie
+          </button>
+          <button
+            class="nav-tab"
+            :class="{ active: activeTab === 'add-training' }"
+            @click="activeTab = 'add-training'"
+          >
+            Dodaj trening
+          </button>
+          <button
+            class="nav-tab"
+            :class="{ active: activeTab === 'add-daily-data' }"
+            @click="handleDailyDataTabClick"
+          >
+            Uzupełnij dane
+          </button>
+          <button
+            class="nav-tab"
+            :class="{ active: activeTab === 'goals' }"
+            @click="activeTab = 'goals'"
+          >
+            Cele
+          </button>
+        </nav>
+        <div class="user-info">
+          <span class="user-name">{{ currentUser.name }}</span>
+          <button class="logout-btn" @click="logout">Wyloguj</button>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <!-- Comparison View -->
+        <div v-if="activeTab === 'comparison'" class="comparison-container">
+          <div class="calendar-section">
+            <h3 class="calendar-title">Kalendarz aktywności</h3>
+            <div class="calendar-controls">
+              <button
+                class="calendar-btn"
+                @click="previousMonth"
+                title="Poprzedni miesiąc"
+              >
+                ‹‹
+              </button>
+              <button
+                class="calendar-btn"
+                @click="goToPreviousWeek"
+                title="Poprzedni tydzień"
+              >
+                ‹
+              </button>
+              <h4 class="current-month">{{ currentMonthYear }}</h4>
+              <button
+                class="calendar-btn"
+                @click="goToNextWeek"
+                title="Następny tydzień"
+              >
+                ›
+              </button>
+              <button
+                class="calendar-btn"
+                @click="nextMonth"
+                title="Następny miesiąc"
+              >
+                ››
+              </button>
+            </div>
+            <div class="calendar-horizontal">
+              <div class="calendar-week">
+                <div
+                  v-for="day in currentWeekDays"
+                  :key="day.date"
+                  class="calendar-day-small"
+                  :class="{
+                    'other-month': !day.isCurrentMonth,
+                    today: day.isToday,
+                    'has-data-fiko': day.hasDataFiko,
+                    'has-data-patka': day.hasDataPatka,
+                    'has-data-both': day.hasDataBoth,
+                    selected: day.date === selectedComparisonDate,
+                  }"
+                  @click="selectComparisonDate(day.date)"
+                >
+                  <div class="day-name">{{ day.dayName }}</div>
+                  <div class="day-number">{{ day.dayNumber }}</div>
+                  <div class="day-indicators-small">
+                    <div
+                      v-if="day.hasDataFiko"
+                      class="indicator-small fiko"
+                    ></div>
+                    <div
+                      v-if="day.hasDataPatka"
+                      class="indicator-small patka"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="selected-date-info">
+              <p>
+                Wybrany dzień: <strong>{{ formatComparisonDate }}</strong>
+              </p>
+            </div>
+          </div>
+
+          <div class="comparison-panels">
+            <PersonPanel
+              :person="persons[0]"
+              :person-index="0"
+              :selected-date="selectedComparisonDate"
+              :goals="persons[0].goals"
+              @update-person="updatePerson"
+              @remove-training="removeTraining"
+              @edit-training="editTraining"
+            />
+            <PersonPanel
+              :person="persons[1]"
+              :person-index="1"
+              :selected-date="selectedComparisonDate"
+              :goals="persons[1].goals"
+              @update-person="updatePerson"
+              @remove-training="removeTraining"
+              @edit-training="editTraining"
+            />
+          </div>
+        </div>
+
+        <!-- Add Training View -->
+        <div v-if="activeTab === 'add-training'" class="add-data-container">
+          <h2 class="add-data-title">
+            Dodaj trening dla {{ currentUser.name }}
+          </h2>
+
+          <div class="user-info-card">
+            <div class="user-avatar">
+              <img
+                :src="getCurrentUserAvatar()"
+                :alt="currentUser.name"
+                class="avatar-image"
+              />
+            </div>
+            <div class="user-details">
+              <h3 class="user-name">{{ currentUser.name }}</h3>
+              <p class="user-description">Dodaj nowy trening</p>
+            </div>
+          </div>
+
+          <div class="date-selector-section">
+            <h3 class="section-title">Wybierz dzień</h3>
+            <div class="date-input-group">
+              <input
+                type="date"
+                v-model="selectedDate"
+                class="date-input"
+                :max="today"
+              />
+              <div class="date-actions">
+                <button class="date-btn" @click="setToday">Dzisiaj</button>
+                <button class="date-btn" @click="setYesterday">Wczoraj</button>
+              </div>
+            </div>
+            <p class="date-info">
+              Wybierasz dane dla: <strong>{{ formatSelectedDate }}</strong>
+            </p>
+          </div>
+
+          <AddTrainingForm
+            :person-index="getCurrentUserPersonIndex()"
+            @training-added="addTraining"
+            @training-added-success="handleTrainingAddedSuccess"
+          />
+        </div>
+
+        <!-- Add Daily Data View -->
+        <div v-if="activeTab === 'add-daily-data'" class="add-data-container">
+          <h2 class="add-data-title">
+            Uzupełnij dane dla {{ currentUser.name }}
+          </h2>
+
+          <div class="user-info-card">
+            <div class="user-avatar">
+              <img
+                :src="getCurrentUserAvatar()"
+                :alt="currentUser.name"
+                class="avatar-image"
+              />
+            </div>
+            <div class="user-details">
+              <h3 class="user-name">{{ currentUser.name }}</h3>
+              <p class="user-description">Uzupełnij statystyki dzienne</p>
+            </div>
+          </div>
+
+          <div class="date-selector-section">
+            <h3 class="section-title">Wybierz dzień</h3>
+            <div class="date-input-group">
+              <input
+                type="date"
+                v-model="selectedDate"
+                class="date-input"
+                :max="today"
+              />
+              <div class="date-actions">
+                <button class="date-btn" @click="setToday">Dzisiaj</button>
+                <button class="date-btn" @click="setYesterday">Wczoraj</button>
+              </div>
+            </div>
+            <p class="date-info">
+              Wybierasz dane dla: <strong>{{ formatSelectedDate }}</strong>
+            </p>
+          </div>
+
+          <DailyDataForm
+            ref="dailyDataFormRef"
+            :selected-date="selectedDate"
+            @daily-stats-saved="handleDailyStatsSaved"
+            @load-stats-for-date="loadStatsForDate"
+          />
+        </div>
+
+        <!-- Goals Form -->
+        <div v-if="activeTab === 'goals'" class="goals-container">
+          <GoalsForm
+            :user-id="currentUser.id"
+            @goals-saved="handleGoalsSaved"
+          />
+        </div>
+      </main>
+    </div>
+  </div>
+</template>
+
+<script>
+import { ref, reactive, onMounted, computed, watch } from "vue";
+import PersonPanel from "./components/PersonPanel.vue";
+import AddTrainingForm from "./components/AddTrainingForm.vue";
+import DailyDataForm from "./components/DailyDataForm.vue";
+import GoalsForm from "./components/GoalsForm.vue";
+import LoginForm from "./components/LoginForm.vue";
+import { supabase } from "./supabase.js";
+
+export default {
+  name: "App",
+  components: {
+    PersonPanel,
+    AddTrainingForm,
+    DailyDataForm,
+    GoalsForm,
+    LoginForm,
+  },
+  setup() {
+    const activeTab = ref("comparison");
+    const isLoggedIn = ref(false);
+    const currentUser = ref(null);
+    const dailyDataFormRef = ref(null);
+
+    const persons = ref([
+      {
+        name: "Fiko",
+        avatar: "/src/dogfiko.jpeg", // Zdjęcie golden retrievera
+        trainings: [],
+        metrics: {
+          trainingTime: 0,
+          distance: 0.0,
+          calories: 0,
+          steps: 0,
+          protein: 0,
+          supplements: false,
+        },
+        dailyStats: [],
+        goals: {
+          training_time_goal: 60,
+          calories_goal: 2000,
+          steps_goal: 10000,
+          protein_goal: 100.0,
+        },
+      },
+      {
+        name: "Patka",
+        avatar: "/src/dogpatka.jpg", // Zdjęcie beagle
+        trainings: [],
+        metrics: {
+          trainingTime: 0,
+          distance: 0.0,
+          calories: 0,
+          steps: 0,
+          protein: 0,
+          supplements: false,
+        },
+        dailyStats: [],
+        goals: {
+          training_time_goal: 60,
+          calories_goal: 2000,
+          steps_goal: 10000,
+          protein_goal: 100.0,
+        },
+      },
+    ]);
+
+    const dailyStats = reactive({
+      calories: 0,
+      steps: 0,
+      protein: 0,
+      weight: 70.5,
+      supplements: false,
+    });
+
+    // Date selector logic
+    const today = ref(new Date().toISOString().split("T")[0]);
+    const selectedDate = ref(new Date().toISOString().split("T")[0]);
+
+    // Calendar logic
+    const currentMonth = ref(new Date().getMonth());
+    const currentYear = ref(new Date().getFullYear());
+    const selectedComparisonDate = ref(new Date().toISOString().split("T")[0]);
+
+    const weekDays = ["Pon", "Wto", "Śro", "Czw", "Pią", "Sob", "Nie"];
+
+    const currentMonthYear = computed(() => {
+      const monthNames = [
+        "Styczeń",
+        "Luty",
+        "Marzec",
+        "Kwiecień",
+        "Maj",
+        "Czerwiec",
+        "Lipiec",
+        "Sierpień",
+        "Wrzesień",
+        "Październik",
+        "Listopad",
+        "Grudzień",
+      ];
+      return `${monthNames[currentMonth.value]} ${currentYear.value}`;
+    });
+
+    const formatComparisonDate = computed(() => {
+      const date = new Date(selectedComparisonDate.value);
+      return date.toLocaleDateString("pl-PL", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    });
+
+    const currentWeekDays = computed(() => {
+      const days = [];
+      const selectedDateObj = new Date(selectedComparisonDate.value);
+      const dayOfWeek = selectedDateObj.getDay();
+      const mondayOffset = (dayOfWeek + 6) % 7; // Convert to Monday = 0
+
+      // Get Monday of the current week
+      const monday = new Date(selectedDateObj);
+      monday.setDate(selectedDateObj.getDate() - mondayOffset);
+
+      // Generate 7 days starting from Monday
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(monday);
+        date.setDate(monday.getDate() + i);
+        const dateString = date.toISOString().split("T")[0];
+        const isToday = dateString === today.value;
+        const isCurrentMonth = date.getMonth() === currentMonth.value;
+
+        const dayNames = ["Pon", "Wto", "Śro", "Czw", "Pią", "Sob", "Nie"];
+
+        days.push({
+          date: dateString,
+          dayNumber: date.getDate(),
+          dayName: dayNames[i],
+          isCurrentMonth,
+          isToday,
+          hasDataFiko: checkIfDateHasData(0, dateString),
+          hasDataPatka: checkIfDateHasData(1, dateString),
+          hasDataBoth:
+            checkIfDateHasData(0, dateString) &&
+            checkIfDateHasData(1, dateString),
+        });
+      }
+
+      return days;
+    });
+
+    const checkIfDateHasData = (personIndex, date) => {
+      const person = persons.value[personIndex];
+      if (!person.dailyStats) return false;
+
+      // Check daily stats
+      const hasDailyStats = person.dailyStats.some(
+        (stat) => stat.date === date
+      );
+
+      // Check trainings
+      const hasTrainings = person.trainings.some(
+        (training) => training.date === date
+      );
+
+      return hasDailyStats || hasTrainings;
+    };
+
+    const previousMonth = () => {
+      if (currentMonth.value === 0) {
+        currentMonth.value = 11;
+        currentYear.value--;
+      } else {
+        currentMonth.value--;
+      }
+
+      // Update selectedComparisonDate to first day of the new month
+      const firstDayOfMonth = new Date(
+        currentYear.value,
+        currentMonth.value,
+        1
+      );
+      selectedComparisonDate.value = firstDayOfMonth
+        .toISOString()
+        .split("T")[0];
+    };
+
+    const nextMonth = () => {
+      if (currentMonth.value === 11) {
+        currentMonth.value = 0;
+        currentYear.value++;
+      } else {
+        currentMonth.value++;
+      }
+
+      // Update selectedComparisonDate to first day of the new month
+      const firstDayOfMonth = new Date(
+        currentYear.value,
+        currentMonth.value,
+        1
+      );
+      selectedComparisonDate.value = firstDayOfMonth
+        .toISOString()
+        .split("T")[0];
+    };
+
+    const selectComparisonDate = (date) => {
+      selectedComparisonDate.value = date;
+    };
+
+    const goToPreviousWeek = () => {
+      const currentDate = new Date(selectedComparisonDate.value);
+      currentDate.setDate(currentDate.getDate() - 7);
+      selectedComparisonDate.value = currentDate.toISOString().split("T")[0];
+    };
+
+    const goToNextWeek = () => {
+      const currentDate = new Date(selectedComparisonDate.value);
+      currentDate.setDate(currentDate.getDate() + 7);
+      selectedComparisonDate.value = currentDate.toISOString().split("T")[0];
+    };
+
+    const formatSelectedDate = computed(() => {
+      const date = new Date(selectedDate.value);
+      return date.toLocaleDateString("pl-PL", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    });
+
+    const setToday = () => {
+      selectedDate.value = today.value;
+    };
+
+    const setYesterday = () => {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      selectedDate.value = yesterday.toISOString().split("T")[0];
+    };
+
+    const loadDailyStatsForDate = (date) => {
+      const personIndex = getCurrentUserPersonIndex();
+      const person = persons.value[personIndex];
+
+      if (person.dailyStats) {
+        const statsForDate = person.dailyStats.find(
+          (stat) => stat.date === date
+        );
+        if (statsForDate) {
+          Object.assign(dailyStats, {
+            calories: statsForDate.calories || 0,
+            steps: statsForDate.steps || 0,
+            protein: statsForDate.protein || 0,
+            weight: statsForDate.weight || 70.5,
+            supplements: statsForDate.supplements || false,
+          });
+        } else {
+          // Reset to default values if no stats for this date
+          Object.assign(dailyStats, {
+            calories: 0,
+            steps: 0,
+            protein: 0,
+            weight: 70.5,
+            supplements: false,
+          });
+        }
+      }
+    };
+
+    // Watch for date changes
+    watch(selectedDate, (newDate) => {
+      loadDailyStatsForDate(newDate);
+    });
+
+    const handleLoginSuccess = (user) => {
+      currentUser.value = user;
+      isLoggedIn.value = true;
+      loadDataFromSupabase();
+    };
+
+    const logout = () => {
+      localStorage.removeItem("fitcompare-user");
+      localStorage.removeItem("fitcompare-data");
+      currentUser.value = null;
+      isLoggedIn.value = false;
+    };
+
+    const updatePerson = async (personIndex, updatedPerson) => {
+      persons.value[personIndex] = {
+        ...persons.value[personIndex],
+        ...updatedPerson,
+      };
+      await saveToSupabase();
+    };
+
+    const addTraining = async (personIndex, training) => {
+      const trainingWithDate = {
+        ...training,
+        date: selectedDate.value,
+        timestamp: new Date().toISOString(),
+      };
+      persons.value[personIndex].trainings.push(trainingWithDate);
+      // Update training time metric
+      persons.value[personIndex].metrics.trainingTime = persons.value[
+        personIndex
+      ].trainings.reduce((total, t) => total + t.duration, 0);
+      await saveToSupabase();
+    };
+
+    const handleGoalsSaved = async (goalsData) => {
+      const personIndex = getCurrentUserPersonIndex();
+      const person = persons.value[personIndex];
+
+      // Update person's goals
+      person.goals = { ...goalsData };
+
+      await saveToSupabase();
+
+      // Przekieruj na porównanie żeby zobaczyć zmiany
+      activeTab.value = "comparison";
+    };
+
+    const handleTrainingAddedSuccess = () => {
+      // Przekieruj na stronę porównania
+      activeTab.value = "comparison";
+    };
+
+    const handleDailyDataTabClick = () => {
+      activeTab.value = "add-daily-data";
+      // Załaduj dane dla wybranego dnia po przejściu na zakładkę
+      // Użyj nextTick żeby poczekać na renderowanie komponentu
+      setTimeout(() => {
+        console.log(
+          "handleDailyDataTabClick - loading stats for:",
+          selectedDate.value
+        );
+        loadStatsForDate(selectedDate.value);
+      }, 200);
+    };
+
+    const removeTraining = async (personIndex, trainingIndex) => {
+      persons.value[personIndex].trainings.splice(trainingIndex, 1);
+      // Update training time metric
+      persons.value[personIndex].metrics.trainingTime = persons.value[
+        personIndex
+      ].trainings.reduce((total, t) => total + t.duration, 0);
+      await saveToSupabase();
+    };
+
+    const editTraining = async (
+      personIndex,
+      trainingIndex,
+      updatedTraining
+    ) => {
+      persons.value[personIndex].trainings[trainingIndex] = updatedTraining;
+      // Update training time metric
+      persons.value[personIndex].metrics.trainingTime = persons.value[
+        personIndex
+      ].trainings.reduce((total, t) => total + t.duration, 0);
+      await saveToSupabase();
+    };
+
+    const getCurrentUserPersonIndex = () => {
+      if (!currentUser.value) {
+        console.log("No current user");
+        return 0;
+      }
+      const index = currentUser.value.name === "Fiko" ? 0 : 1;
+      console.log("Current user:", currentUser.value.name, "Index:", index);
+      return index;
+    };
+
+    const getCurrentUserAvatar = () => {
+      if (!currentUser.value) return "/src/dogpatka.jpg"; // Domyślny avatar
+      return currentUser.value.name === "Fiko"
+        ? "/src/dogfiko.jpeg"
+        : "/src/dogpatka.jpg";
+    };
+
+    const handleDailyStatsSaved = async (statsData) => {
+      const personIndex = getCurrentUserPersonIndex();
+      const person = persons.value[personIndex];
+
+      // Add date to the stats
+      const statsWithDate = {
+        ...statsData,
+        date: selectedDate.value,
+        timestamp: new Date().toISOString(),
+      };
+
+      // Store daily stats with date
+      if (!person.dailyStats) {
+        person.dailyStats = [];
+      }
+
+      // Check if stats for this date already exist
+      const existingStatsIndex = person.dailyStats.findIndex(
+        (stat) => stat.date === selectedDate.value
+      );
+
+      if (existingStatsIndex !== -1) {
+        // Update existing stats
+        person.dailyStats[existingStatsIndex] = statsWithDate;
+      } else {
+        // Add new stats
+        person.dailyStats.push(statsWithDate);
+      }
+
+      // Update total metrics (only add new values, don't accumulate)
+      const previousStats =
+        existingStatsIndex !== -1
+          ? person.dailyStats[existingStatsIndex]
+          : null;
+      if (previousStats) {
+        // Subtract previous values and add new ones
+        person.metrics.calories =
+          person.metrics.calories -
+          (previousStats.calories || 0) +
+          statsData.calories;
+        person.metrics.steps =
+          person.metrics.steps - (previousStats.steps || 0) + statsData.steps;
+        person.metrics.protein =
+          person.metrics.protein -
+          (previousStats.protein || 0) +
+          statsData.protein;
+      } else {
+        // Add new values
+        person.metrics.calories += statsData.calories;
+        person.metrics.steps += statsData.steps;
+        person.metrics.protein += statsData.protein;
+      }
+
+      person.metrics.supplements = statsData.supplements;
+
+      await saveToSupabase();
+
+      // Przekieruj na porównanie żeby zobaczyć zmiany
+      activeTab.value = "comparison";
+    };
+
+    const loadStatsForDate = (date) => {
+      console.log("=== LOAD STATS FOR DATE ===");
+      console.log("Loading stats for date:", date);
+      console.log("Current user:", currentUser.value?.name);
+      console.log("Persons data:", persons.value);
+
+      if (!dailyDataFormRef.value) {
+        console.log("❌ dailyDataFormRef not available");
+        return;
+      }
+
+      const personIndex = getCurrentUserPersonIndex();
+      console.log("Person index:", personIndex);
+
+      if (personIndex === -1 || !persons.value[personIndex]) {
+        console.log("❌ Person not found");
+        return;
+      }
+
+      const person = persons.value[personIndex];
+      console.log("✅ Person data:", person);
+      console.log("✅ Person dailyStats:", person.dailyStats);
+
+      // Znajdź dane dla tego dnia
+      const statsForDate = person.dailyStats?.find(
+        (stat) => stat.date === date
+      );
+
+      console.log("🔍 Found stats for date:", statsForDate);
+
+      // Ustaw dane w formularzu
+      if (dailyDataFormRef.value && dailyDataFormRef.value.setStatsData) {
+        console.log("✅ Calling setStatsData with:", statsForDate);
+        dailyDataFormRef.value.setStatsData(statsForDate);
+        console.log("✅ setStatsData called successfully");
+      } else {
+        console.log("❌ setStatsData method not available");
+        console.log("dailyDataFormRef.value:", dailyDataFormRef.value);
+      }
+      console.log("=== END LOAD STATS ===");
+    };
+
+    const increment = (field) => {
+      dailyStats[field] += field === "weight" || field === "protein" ? 0.1 : 1;
+    };
+
+    const decrement = (field) => {
+      if (dailyStats[field] > 0) {
+        dailyStats[field] -=
+          field === "weight" || field === "protein" ? 0.1 : 1;
+      }
+    };
+
+    const saveToSupabase = async () => {
+      try {
+        console.log("Saving to Supabase for user:", currentUser.value?.name);
+        console.log("Persons data:", persons.value);
+
+        // Zapisz treningi i dane dzienne dla każdej osoby
+        for (const person of persons.value) {
+          const userId = person.name === "Fiko" ? "fiko" : "patka";
+
+          // Znajdź user_id
+          const { data: userData } = await supabase
+            .from("users")
+            .select("id")
+            .eq("username", userId)
+            .single();
+
+          if (userData) {
+            // Zapisz treningi
+            if (person.trainings && person.trainings.length > 0) {
+              for (const training of person.trainings) {
+                // Sprawdź czy trening już istnieje
+                const { data: existingTraining } = await supabase
+                  .from("trainings")
+                  .select("id")
+                  .eq("user_id", userData.id)
+                  .eq("type", training.type)
+                  .eq("duration", training.duration)
+                  .eq("date", training.date)
+                  .single();
+
+                if (existingTraining) {
+                  // Aktualizuj istniejący trening
+                  const { error: trainingError } = await supabase
+                    .from("trainings")
+                    .update({
+                      details: training.details || {},
+                      timestamp: training.timestamp,
+                      updated_at: new Date().toISOString(),
+                    })
+                    .eq("id", existingTraining.id);
+
+                  if (trainingError)
+                    console.error("Training update error:", trainingError);
+                } else {
+                  // Dodaj nowy trening
+                  const { error: trainingError } = await supabase
+                    .from("trainings")
+                    .insert({
+                      user_id: userData.id,
+                      type: training.type,
+                      duration: training.duration,
+                      details: training.details || {},
+                      date: training.date,
+                      timestamp: training.timestamp,
+                    });
+
+                  if (trainingError)
+                    console.error("Training insert error:", trainingError);
+                }
+              }
+            }
+
+            // Zapisz dane dzienne
+            if (person.dailyStats && person.dailyStats.length > 0) {
+              for (const dailyStat of person.dailyStats) {
+                const { error: dailyError } = await supabase
+                  .from("daily_stats")
+                  .upsert(
+                    {
+                      user_id: userData.id,
+                      date: dailyStat.date,
+                      calories: dailyStat.calories || 0,
+                      steps: dailyStat.steps || 0,
+                      protein: dailyStat.protein || 0,
+                      weight: dailyStat.weight || 70.5,
+                      supplements: dailyStat.supplements || false,
+                      timestamp: dailyStat.timestamp,
+                    },
+                    {
+                      onConflict: "user_id,date",
+                      ignoreDuplicates: false,
+                    }
+                  );
+
+                if (dailyError)
+                  console.error("Daily stats save error:", dailyError);
+              }
+            }
+
+            // Zapisz metryki
+            const { error: metricsError } = await supabase
+              .from("user_metrics")
+              .upsert(
+                {
+                  user_id: userData.id,
+                  training_time: person.metrics.trainingTime || 0,
+                  distance: person.metrics.distance || 0,
+                  calories: person.metrics.calories || 0,
+                  steps: person.metrics.steps || 0,
+                  protein: person.metrics.protein || 0,
+                  supplements: person.metrics.supplements || false,
+                },
+                {
+                  onConflict: "user_id",
+                  ignoreDuplicates: false,
+                }
+              );
+
+            if (metricsError)
+              console.error("Metrics save error:", metricsError);
+
+            // Zapisz cele
+            if (person.goals) {
+              const { error: goalsError } = await supabase
+                .from("user_goals")
+                .upsert(
+                  {
+                    user_id: userData.id,
+                    training_time_goal: person.goals.training_time_goal || 60,
+                    calories_goal: person.goals.calories_goal || 2000,
+                    steps_goal: person.goals.steps_goal || 10000,
+                    protein_goal: person.goals.protein_goal || 100.0,
+                    supplements_goal: true, // Zawsze true
+                  },
+                  {
+                    onConflict: "user_id",
+                    ignoreDuplicates: false,
+                  }
+                );
+
+              if (goalsError) console.error("Goals save error:", goalsError);
+            }
+          }
+        }
+
+        console.log("Successfully saved to Supabase!");
+      } catch (err) {
+        console.error("Error saving to Supabase:", err);
+        // Fallback to localStorage
+        localStorage.setItem("fitcompare-data", JSON.stringify(persons.value));
+      }
+    };
+
+    const loadDataFromSupabase = async () => {
+      try {
+        console.log(
+          "Loading data from Supabase for user:",
+          currentUser.value?.name
+        );
+
+        // Załaduj dane dla obu użytkowników
+        const loadedPersons = [];
+
+        for (const username of ["fiko", "patka"]) {
+          // Znajdź user_id
+          const { data: userData } = await supabase
+            .from("users")
+            .select("id")
+            .eq("username", username)
+            .single();
+
+          if (userData) {
+            // Załaduj treningi
+            const { data: trainings } = await supabase
+              .from("trainings")
+              .select("*")
+              .eq("user_id", userData.id)
+              .order("date", { ascending: false });
+
+            // Załaduj dane dzienne
+            const { data: dailyStats } = await supabase
+              .from("daily_stats")
+              .select("*")
+              .eq("user_id", userData.id)
+              .order("date", { ascending: false });
+
+            // Załaduj metryki
+            const { data: metrics } = await supabase
+              .from("user_metrics")
+              .select("*")
+              .eq("user_id", userData.id)
+              .single();
+
+            // Załaduj cele
+            const { data: goals } = await supabase
+              .from("user_goals")
+              .select("*")
+              .eq("user_id", userData.id)
+              .single();
+
+            loadedPersons.push({
+              name: username === "fiko" ? "Fiko" : "Patka",
+              avatar:
+                username === "fiko" ? "/src/dogfiko.jpeg" : "/src/dogpatka.jpg", // Dodaj ścieżki do obrazów
+              trainings: trainings || [],
+              dailyStats: dailyStats || [],
+              metrics: metrics
+                ? {
+                    trainingTime: metrics.training_time || 0,
+                    distance: metrics.distance || 0,
+                    calories: metrics.calories || 0,
+                    steps: metrics.steps || 0,
+                    protein: metrics.protein || 0,
+                    supplements: metrics.supplements || false,
+                  }
+                : {
+                    trainingTime: 0,
+                    distance: 0,
+                    calories: 0,
+                    steps: 0,
+                    protein: 0,
+                    supplements: false,
+                  },
+              goals: goals
+                ? {
+                    training_time_goal: goals.training_time_goal || 60,
+                    calories_goal: goals.calories_goal || 2000,
+                    steps_goal: goals.steps_goal || 10000,
+                    protein_goal: goals.protein_goal || 100.0,
+                  }
+                : {
+                    training_time_goal: 60,
+                    calories_goal: 2000,
+                    steps_goal: 10000,
+                    protein_goal: 100.0,
+                  },
+            });
+          }
+        }
+
+        if (loadedPersons.length > 0) {
+          console.log("Loaded data from Supabase:", loadedPersons);
+          persons.value = loadedPersons;
+        } else {
+          console.log("No data found in Supabase, loading from localStorage");
+          loadFromLocalStorage();
+        }
+      } catch (err) {
+        console.error("Error loading from Supabase:", err);
+        loadFromLocalStorage();
+      }
+    };
+
+    const migratePersonNames = (data) => {
+      // Migrate old "Osoba 1" and "Osoba 2" to "Fiko" and "Patka"
+      const migratedData = [...data];
+
+      if (migratedData.length >= 2) {
+        if (migratedData[0].name === "Osoba 1") {
+          migratedData[0].name = "Fiko";
+        }
+        if (migratedData[1].name === "Osoba 2") {
+          migratedData[1].name = "Patka";
+        }
+      }
+
+      console.log("Migrated person names:", migratedData);
+      return migratedData;
+    };
+
+    const loadFromLocalStorage = () => {
+      const saved = localStorage.getItem("fitcompare-data");
+      if (saved) {
+        const parsedData = JSON.parse(saved);
+        const migratedData = migratePersonNames(parsedData);
+        persons.value = migratedData;
+
+        // Save migrated data back to localStorage
+        localStorage.setItem("fitcompare-data", JSON.stringify(migratedData));
+      }
+    };
+
+    onMounted(() => {
+      // Check if user is already logged in
+      const savedUser = localStorage.getItem("fitcompare-user");
+      if (savedUser) {
+        currentUser.value = JSON.parse(savedUser);
+        isLoggedIn.value = true;
+        loadDataFromSupabase();
+      }
+    });
+
+    return {
+      activeTab,
+      persons,
+      dailyStats,
+      isLoggedIn,
+      currentUser,
+      selectedDate,
+      today,
+      formatSelectedDate,
+      currentMonth,
+      currentYear,
+      selectedComparisonDate,
+      weekDays,
+      currentMonthYear,
+      formatComparisonDate,
+      currentWeekDays,
+      updatePerson,
+      addTraining,
+      removeTraining,
+      editTraining,
+      increment,
+      decrement,
+      handleLoginSuccess,
+      logout,
+      getCurrentUserPersonIndex,
+      getCurrentUserAvatar,
+      setToday,
+      setYesterday,
+      loadDailyStatsForDate,
+      previousMonth,
+      nextMonth,
+      selectComparisonDate,
+      goToPreviousWeek,
+      goToNextWeek,
+      checkIfDateHasData,
+      migratePersonNames,
+      handleDailyStatsSaved,
+      handleGoalsSaved,
+      handleTrainingAddedSuccess,
+      handleDailyDataTabClick,
+      loadStatsForDate,
+    };
+  },
+};
+</script>
+
+<style>
+/* Global styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  color: white;
+  min-height: 100vh;
+}
+
+/* Header styles */
+.header {
+  background: linear-gradient(145deg, #2c2c2c, #1a1a1a);
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  border-bottom: 3px solid #ff7f27;
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 28px;
+  font-weight: bold;
+  color: #ff7f27;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(145deg, #ff7f27, #e66a1a);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+  box-shadow: 0 4px 8px rgba(255, 127, 39, 0.3);
+}
+
+.user-name {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.logout-btn {
+  background: linear-gradient(145deg, #ff4444, #cc3333);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(255, 68, 68, 0.3);
+}
+
+.logout-btn:hover {
+  background: linear-gradient(145deg, #cc3333, #aa2222);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(255, 68, 68, 0.4);
+}
+
+/* Navigation styles */
+.nav {
+  background-color: #333;
+  padding: 0;
+  border-bottom: 2px solid #444;
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+}
+
+.nav-tab {
+  background: none;
+  border: none;
+  color: #ccc;
+  padding: 15px 25px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-bottom: 3px solid transparent;
+  position: relative;
+}
+
+.nav-tab:hover {
+  color: white;
+  background-color: #444;
+}
+
+.nav-tab.active {
+  color: #ff7f27;
+  border-bottom-color: #ff7f27;
+  background-color: #2a2a2a;
+}
+
+.nav-tab.active::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #ff7f27, #e66a1a);
+}
+
+/* Main content */
+.main-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 30px 20px;
+}
+
+/* Comparison view */
+.comparison-container {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.calendar-section {
+  background-color: #2c2c2c;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.calendar-title {
+  color: #ff7f27;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.calendar-nav {
+  display: flex;
+  gap: 10px;
+}
+
+.calendar-btn {
+  background: linear-gradient(145deg, #ff7f27, #e66a1a);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(255, 127, 39, 0.3);
+}
+
+.calendar-btn:hover {
+  background: linear-gradient(145deg, #e66a1a, #d45a0a);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(255, 127, 39, 0.4);
+}
+
+.calendar-week {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.calendar-day {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  background-color: #333;
+  color: #ccc;
+}
+
+.calendar-day:hover {
+  background-color: #444;
+  transform: translateY(-2px);
+}
+
+.calendar-day.today {
+  background: linear-gradient(145deg, #4caf50, #45a049);
+  color: white;
+  font-weight: bold;
+}
+
+.calendar-day.selected {
+  background: linear-gradient(145deg, #ff7f27, #e66a1a);
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 4px 8px rgba(255, 127, 39, 0.4);
+}
+
+.calendar-day.has-data-fiko {
+  background-color: #2e7d32;
+  color: white;
+}
+
+.calendar-day.has-data-patka {
+  background-color: #1976d2;
+  color: white;
+}
+
+.calendar-day.has-data-both {
+  background: linear-gradient(45deg, #2e7d32, #1976d2);
+  color: white;
+}
+
+.calendar-day.has-data-fiko::after {
+  content: "F";
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: #4caf50;
+  color: white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.calendar-day.has-data-patka::after {
+  content: "P";
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: #2196f3;
+  color: white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.calendar-day.has-data-both::after {
+  content: "B";
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: #ff7f27;
+  color: white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+/* Add data view */
+.add-data-container {
+  background-color: #2c2c2c;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.add-data-title {
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.user-info-card {
+  background-color: #333;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 25px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border: 2px solid #444;
+}
+
+.user-avatar {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(145deg, #ff7f27, #e66a1a);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+  box-shadow: 0 6px 12px rgba(255, 127, 39, 0.4);
+  overflow: hidden;
+}
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.avatar-text {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.user-info-details h3 {
+  color: white;
+  font-size: 20px;
+  margin-bottom: 5px;
+}
+
+.user-info-details p {
+  color: #ccc;
+  font-size: 14px;
+}
+
+.date-selector {
+  background-color: #333;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 25px;
+  border: 2px solid #444;
+}
+
+.section-title {
+  color: #ff7f27;
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.date-input-group {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.date-input {
+  padding: 12px;
+  background: linear-gradient(145deg, #1a1a1a, #2a2a2a);
+  border: 2px solid #333;
+  border-radius: 12px;
+  color: white;
+  font-size: 16px;
+  flex: 1;
+  transition: all 0.3s ease;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: #ff7f27;
+  background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3),
+    0 0 0 3px rgba(255, 127, 39, 0.2);
+  transform: translateY(-1px);
+}
+
+.date-input:hover {
+  border-color: #555;
+  transform: translateY(-1px);
+}
+
+.date-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.date-btn {
+  background: linear-gradient(145deg, #ff7f27, #e66a1a);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(255, 127, 39, 0.3);
+}
+
+.date-btn:hover {
+  background: linear-gradient(145deg, #e66a1a, #d45a0a);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(255, 127, 39, 0.4);
+}
+
+.date-info {
+  color: #ccc;
+  font-size: 14px;
+  text-align: center;
+}
+
+.date-info strong {
+  color: #ff7f27;
+}
+
+/* Login form */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+}
+
+.login-form {
+  background-color: #2c2c2c;
+  border-radius: 16px;
+  padding: 40px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  border: 2px solid #444;
+  max-width: 400px;
+  width: 100%;
+}
+
+.login-title {
+  color: white;
+  font-size: 28px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.login-subtitle {
+  color: #ccc;
+  font-size: 16px;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.form-input {
+  width: 100%;
+  padding: 14px 16px;
+  background: linear-gradient(145deg, #1a1a1a, #2a2a2a);
+  border: 2px solid #333;
+  border-radius: 12px;
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #ff7f27;
+  background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3),
+    0 0 0 3px rgba(255, 127, 39, 0.2);
+  transform: translateY(-1px);
+}
+
+.form-input:hover {
+  border-color: #555;
+  transform: translateY(-1px);
+}
+
+.login-btn {
+  width: 100%;
+  padding: 16px 20px;
+  background: linear-gradient(145deg, #ff7f27, #e66a1a);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 16px rgba(255, 127, 39, 0.4);
+}
+
+.login-btn:hover {
+  background: linear-gradient(145deg, #e66a1a, #d45a0a);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255, 127, 39, 0.5);
+}
+
+.login-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(255, 127, 39, 0.4);
+}
+
+.login-btn:disabled {
+  background: #666;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.error-message {
+  background-color: #ff4444;
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .comparison-container {
+    flex-direction: column;
+  }
+
+  .calendar-week {
+    flex-wrap: wrap;
+  }
+
+  .calendar-day {
+    width: 35px;
+    height: 35px;
+    font-size: 12px;
+  }
+
+  .date-input-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .date-actions {
+    justify-content: center;
+  }
+}
+</style>
