@@ -138,7 +138,7 @@ export default {
 
 .login-input:focus {
   outline: none;
-  border-color: #ff7f27;
+  border-color: #00c073;
 }
 
 .login-input::placeholder {
@@ -147,7 +147,7 @@ export default {
 
 .login-btn {
   padding: 18px 24px;
-  background: #ff7f27;
+  background: #00c073;
   border: none;
   border-radius: 8px;
   color: #fff;
@@ -160,7 +160,7 @@ export default {
 }
 
 .login-btn:hover:not(:disabled) {
-  background: #e66a1a;
+  background: #00a060;
 }
 
 .login-btn:disabled {

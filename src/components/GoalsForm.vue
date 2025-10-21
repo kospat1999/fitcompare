@@ -191,7 +191,7 @@ export default {
 
 .number-input-simple:focus {
   outline: none;
-  border-color: #ff7f27;
+  border-color: #00c073;
 }
 
 .checkbox-label {
@@ -204,7 +204,7 @@ export default {
 .checkbox-input {
   width: 18px;
   height: 18px;
-  accent-color: #ff7f27;
+  accent-color: #00c073;
 }
 
 .checkbox-text {
@@ -215,7 +215,7 @@ export default {
 
 .action-btn {
   padding: 14px 20px;
-  background: linear-gradient(135deg, #ff7f27, #e66a1a);
+  background: linear-gradient(135deg, #00c073, #00a060);
   border: none;
   border-radius: 8px;
   color: #fff;

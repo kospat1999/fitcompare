@@ -42,13 +42,6 @@
           </div>
           <div class="training-actions">
             <button
-              class="edit-btn"
-              @click="editTraining(index)"
-              title="Edytuj"
-            >
-              ✏️
-            </button>
-            <button
               class="delete-btn"
               @click="removeTraining(index)"
               title="Usuń"
@@ -170,7 +163,7 @@ export default {
       }),
     },
   },
-  emits: ["update-person", "remove-training", "edit-training"],
+  emits: ["update-person", "remove-training"],
   computed: {
     filteredTrainings() {
       if (!this.selectedDate) {
@@ -249,19 +242,6 @@ export default {
         this.$emit("remove-training", this.personIndex, index);
       }
     },
-    editTraining(index) {
-      const training = this.person.trainings[index];
-      const newType = prompt("Typ treningu:", training.type);
-      const newDuration = prompt("Czas trwania (min):", training.duration);
-
-      if (newType && newDuration && !isNaN(newDuration)) {
-        const updatedTraining = {
-          type: newType,
-          duration: parseInt(newDuration),
-        };
-        this.$emit("edit-training", this.personIndex, index, updatedTraining);
-      }
-    },
   },
 };
 </script>
@@ -291,7 +271,7 @@ export default {
 }
 
 .dumbbell-btn {
-  background: linear-gradient(145deg, #ff7f27, #e66a1a);
+  background: linear-gradient(145deg, #00c073, #00a060);
   border: none;
   border-radius: 50%;
   width: 50px;
@@ -314,7 +294,7 @@ export default {
 }
 
 .dumbbell-btn:hover {
-  background: linear-gradient(145deg, #e66a1a, #d45a0a);
+  background: linear-gradient(145deg, #00a060, #008050);
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(255, 127, 39, 0.4);
 }
@@ -324,7 +304,7 @@ export default {
 }
 
 .section-title {
-  color: #ff7f27;
+  color: #00c073;
   font-size: 16px;
   font-weight: bold;
   margin-bottom: 15px;
@@ -396,7 +376,7 @@ export default {
 }
 
 .spec-text {
-  color: #ff7f27;
+  color: #00c073;
   font-weight: 500;
 }
 
@@ -405,7 +385,6 @@ export default {
   gap: 8px;
 }
 
-.edit-btn,
 .delete-btn {
   background: none;
   border: none;
@@ -414,11 +393,6 @@ export default {
   padding: 4px;
   border-radius: 4px;
   transition: all 0.3s ease;
-}
-
-.edit-btn:hover {
-  background-color: #ff7f27;
-  transform: scale(1.1);
 }
 
 .delete-btn:hover {

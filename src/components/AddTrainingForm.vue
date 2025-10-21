@@ -91,6 +91,10 @@ export default {
       type: Number,
       required: true,
     },
+    selectedDate: {
+      type: String,
+      required: true,
+    },
   },
   emits: ["training-added", "training-added-success"],
   setup(props, { emit }) {
@@ -128,6 +132,8 @@ export default {
         type: selectedTrainingType.value,
         duration: duration.value,
         details: {},
+        date: props.selectedDate,
+        timestamp: new Date().toISOString(),
       };
 
       // Dodaj szczegóły w zależności od typu treningu
@@ -257,7 +263,7 @@ export default {
 }
 
 .dropdown-item.selected {
-  background-color: #ff7f27;
+  background-color: #00c073;
 }
 
 .number-input-simple {
@@ -275,7 +281,7 @@ export default {
 
 .number-input-simple:focus {
   outline: none;
-  border-color: #ff7f27;
+  border-color: #00c073;
   background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3),
     0 0 0 3px rgba(255, 127, 39, 0.2);
@@ -290,7 +296,7 @@ export default {
 .action-btn {
   width: 100%;
   padding: 16px 20px;
-  background: linear-gradient(145deg, #ff7f27, #e66a1a);
+  background: linear-gradient(145deg, #00c073, #00a060);
   border: none;
   border-radius: 12px;
   color: white;
@@ -306,7 +312,7 @@ export default {
 }
 
 .action-btn:hover {
-  background: linear-gradient(145deg, #e66a1a, #d45a0a);
+  background: linear-gradient(145deg, #00a060, #008050);
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(255, 127, 39, 0.5);
 }

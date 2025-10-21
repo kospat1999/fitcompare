@@ -7,7 +7,6 @@
     <div v-else>
       <header class="header">
         <div class="logo">
-          <div class="logo-icon">⚡</div>
           <div class="logo-text">
             <span class="fit">Fit</span><span class="compare">Compare</span>
           </div>
@@ -43,7 +42,12 @@
           </button>
         </nav>
         <div class="user-info">
-          <span class="user-name">{{ currentUser.name }}</span>
+          <div class="user-details">
+            <span class="user-name">{{ currentUser.name }}</span>
+            <span class="challenge-counter">
+              {{ daysUntilChallengeEnd }} dni do końca wyzwania
+            </span>
+          </div>
           <button class="logout-btn" @click="logout">Wyloguj</button>
         </div>
       </header>
@@ -55,34 +59,26 @@
             <h3 class="calendar-title">Kalendarz aktywności</h3>
             <div class="calendar-controls">
               <button
-                class="calendar-btn"
+                class="calendar-btn prev"
                 @click="previousMonth"
                 title="Poprzedni miesiąc"
-              >
-                ‹‹
-              </button>
+              ></button>
               <button
-                class="calendar-btn"
+                class="calendar-btn prev"
                 @click="goToPreviousWeek"
                 title="Poprzedni tydzień"
-              >
-                ‹
-              </button>
+              ></button>
               <h4 class="current-month">{{ currentMonthYear }}</h4>
               <button
-                class="calendar-btn"
+                class="calendar-btn next"
                 @click="goToNextWeek"
                 title="Następny tydzień"
-              >
-                ›
-              </button>
+              ></button>
               <button
-                class="calendar-btn"
+                class="calendar-btn next"
                 @click="nextMonth"
                 title="Następny miesiąc"
-              >
-                ››
-              </button>
+              ></button>
             </div>
             <div class="calendar-horizontal">
               <div class="calendar-week">
@@ -130,7 +126,6 @@
               :goals="persons[0].goals"
               @update-person="updatePerson"
               @remove-training="removeTraining"
-              @edit-training="editTraining"
             />
             <PersonPanel
               :person="persons[1]"
@@ -139,7 +134,6 @@
               :goals="persons[1].goals"
               @update-person="updatePerson"
               @remove-training="removeTraining"
-              @edit-training="editTraining"
             />
           </div>
         </div>
@@ -165,26 +159,21 @@
           </div>
 
           <div class="date-selector-section">
-            <h3 class="section-title">Wybierz dzień</h3>
-            <div class="date-input-group">
-              <input
-                type="date"
-                v-model="selectedDate"
-                class="date-input"
-                :max="today"
-              />
-              <div class="date-actions">
-                <button class="date-btn" @click="setToday">Dzisiaj</button>
-                <button class="date-btn" @click="setYesterday">Wczoraj</button>
-              </div>
+            <h3 class="section-title">Wybrany dzień z kalendarza</h3>
+            <div class="date-display">
+              <p class="date-info">
+                Dodajesz trening dla:
+                <strong>{{ formatComparisonDate }}</strong>
+              </p>
+              <p class="date-note">
+                Aby zmienić dzień, użyj kalendarza w zakładce "Porównanie"
+              </p>
             </div>
-            <p class="date-info">
-              Wybierasz dane dla: <strong>{{ formatSelectedDate }}</strong>
-            </p>
           </div>
 
           <AddTrainingForm
             :person-index="getCurrentUserPersonIndex()"
+            :selected-date="selectedComparisonDate"
             @training-added="addTraining"
             @training-added-success="handleTrainingAddedSuccess"
           />
@@ -211,27 +200,21 @@
           </div>
 
           <div class="date-selector-section">
-            <h3 class="section-title">Wybierz dzień</h3>
-            <div class="date-input-group">
-              <input
-                type="date"
-                v-model="selectedDate"
-                class="date-input"
-                :max="today"
-              />
-              <div class="date-actions">
-                <button class="date-btn" @click="setToday">Dzisiaj</button>
-                <button class="date-btn" @click="setYesterday">Wczoraj</button>
-              </div>
+            <h3 class="section-title">Wybrany dzień z kalendarza</h3>
+            <div class="date-display">
+              <p class="date-info">
+                Uzupełniasz dane dla:
+                <strong>{{ formatComparisonDate }}</strong>
+              </p>
+              <p class="date-note">
+                Aby zmienić dzień, użyj kalendarza w zakładce "Porównanie"
+              </p>
             </div>
-            <p class="date-info">
-              Wybierasz dane dla: <strong>{{ formatSelectedDate }}</strong>
-            </p>
           </div>
 
           <DailyDataForm
             ref="dailyDataFormRef"
-            :selected-date="selectedDate"
+            :selected-date="selectedComparisonDate"
             @daily-stats-saved="handleDailyStatsSaved"
             @load-stats-for-date="loadStatsForDate"
           />
@@ -250,7 +233,7 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted, computed, watch } from "vue";
+import { ref, reactive, onMounted, computed, watch, nextTick } from "vue";
 import PersonPanel from "./components/PersonPanel.vue";
 import AddTrainingForm from "./components/AddTrainingForm.vue";
 import DailyDataForm from "./components/DailyDataForm.vue";
@@ -324,14 +307,22 @@ export default {
       supplements: false,
     });
 
-    // Date selector logic
-    const today = ref(new Date().toISOString().split("T")[0]);
-    const selectedDate = ref(new Date().toISOString().split("T")[0]);
+    // Date selector logic - użyj lokalnej strefy czasowej
+    const getTodayString = () => {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, "0");
+      const day = String(today.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
+    const today = ref(getTodayString());
+    const selectedDate = ref(getTodayString());
 
     // Calendar logic
     const currentMonth = ref(new Date().getMonth());
     const currentYear = ref(new Date().getFullYear());
-    const selectedComparisonDate = ref(new Date().toISOString().split("T")[0]);
+    const selectedComparisonDate = ref(getTodayString());
 
     const weekDays = ["Pon", "Wto", "Śro", "Czw", "Pią", "Sob", "Nie"];
 
@@ -481,14 +472,37 @@ export default {
       });
     });
 
+    const daysUntilChallengeEnd = computed(() => {
+      const today = new Date();
+      const challengeEnd = new Date(2026, 0, 31); // 31 stycznia 2026
+
+      // Ustaw czas na początek dnia dla obu dat
+      today.setHours(0, 0, 0, 0);
+      challengeEnd.setHours(0, 0, 0, 0);
+
+      const timeDiff = challengeEnd.getTime() - today.getTime();
+      const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24));
+
+      // Jeśli wyzwanie już się skończyło, pokaż 0
+      if (daysDiff < 0) {
+        return 0;
+      }
+
+      return daysDiff;
+    });
+
     const setToday = () => {
-      selectedDate.value = today.value;
+      const todayString = getTodayString();
+      selectedDate.value = todayString;
     };
 
     const setYesterday = () => {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      selectedDate.value = yesterday.toISOString().split("T")[0];
+      const year = yesterday.getFullYear();
+      const month = String(yesterday.getMonth() + 1).padStart(2, "0");
+      const day = String(yesterday.getDate()).padStart(2, "0");
+      selectedDate.value = `${year}-${month}-${day}`;
     };
 
     const loadDailyStatsForDate = (date) => {
@@ -528,6 +542,27 @@ export default {
     const handleLoginSuccess = (user) => {
       currentUser.value = user;
       isLoggedIn.value = true;
+
+      // Dodaj test dane dla debugowania
+      const personIndex = getCurrentUserPersonIndex();
+      if (persons.value[personIndex]) {
+        persons.value[personIndex].dailyStats = [
+          {
+            date: "2024-10-20",
+            calories: 1500,
+            steps: 8000,
+            protein: 80,
+            weight: 70,
+            supplements: true,
+            timestamp: new Date().toISOString(),
+          },
+        ];
+        console.log(
+          "Added test data for debugging:",
+          persons.value[personIndex].dailyStats
+        );
+      }
+
       loadDataFromSupabase();
     };
 
@@ -547,12 +582,8 @@ export default {
     };
 
     const addTraining = async (personIndex, training) => {
-      const trainingWithDate = {
-        ...training,
-        date: selectedDate.value,
-        timestamp: new Date().toISOString(),
-      };
-      persons.value[personIndex].trainings.push(trainingWithDate);
+      // Training już ma date i timestamp z AddTrainingForm
+      persons.value[personIndex].trainings.push(training);
       // Update training time metric
       persons.value[personIndex].metrics.trainingTime = persons.value[
         personIndex
@@ -580,37 +611,68 @@ export default {
 
     const handleDailyDataTabClick = () => {
       activeTab.value = "add-daily-data";
-      // Załaduj dane dla wybranego dnia po przejściu na zakładkę
+      // Załaduj dane dla wybranego dnia z kalendarza po przejściu na zakładkę
       // Użyj nextTick żeby poczekać na renderowanie komponentu
-      setTimeout(() => {
-        console.log(
-          "handleDailyDataTabClick - loading stats for:",
-          selectedDate.value
-        );
-        loadStatsForDate(selectedDate.value);
-      }, 200);
+      nextTick(() => {
+        setTimeout(() => {
+          console.log(
+            "handleDailyDataTabClick - loading stats for:",
+            selectedComparisonDate.value
+          );
+          loadStatsForDate(selectedComparisonDate.value);
+        }, 500); // Zwiększyłem timeout do 500ms
+      });
     };
 
     const removeTraining = async (personIndex, trainingIndex) => {
-      persons.value[personIndex].trainings.splice(trainingIndex, 1);
+      const person = persons.value[personIndex];
+      const trainingToRemove = person.trainings[trainingIndex];
+
+      // Usuń trening z lokalnej tablicy
+      person.trainings.splice(trainingIndex, 1);
+
       // Update training time metric
-      persons.value[personIndex].metrics.trainingTime = persons.value[
-        personIndex
-      ].trainings.reduce((total, t) => total + t.duration, 0);
+      person.metrics.trainingTime = person.trainings.reduce(
+        (total, t) => total + t.duration,
+        0
+      );
+
+      // Usuń trening z bazy danych
+      await removeTrainingFromSupabase(person.name, trainingToRemove);
+
       await saveToSupabase();
     };
 
-    const editTraining = async (
-      personIndex,
-      trainingIndex,
-      updatedTraining
-    ) => {
-      persons.value[personIndex].trainings[trainingIndex] = updatedTraining;
-      // Update training time metric
-      persons.value[personIndex].metrics.trainingTime = persons.value[
-        personIndex
-      ].trainings.reduce((total, t) => total + t.duration, 0);
-      await saveToSupabase();
+    const removeTrainingFromSupabase = async (personName, trainingToRemove) => {
+      try {
+        const userId = personName === "Fiko" ? "fiko" : "patka";
+
+        // Znajdź user_id
+        const { data: userData } = await supabase
+          .from("users")
+          .select("id")
+          .eq("username", userId)
+          .single();
+
+        if (userData) {
+          // Usuń trening z bazy danych
+          const { error } = await supabase
+            .from("trainings")
+            .delete()
+            .eq("user_id", userData.id)
+            .eq("type", trainingToRemove.type)
+            .eq("duration", trainingToRemove.duration)
+            .eq("date", trainingToRemove.date);
+
+          if (error) {
+            console.error("Error removing training from Supabase:", error);
+          } else {
+            console.log("Training removed from Supabase successfully");
+          }
+        }
+      } catch (error) {
+        console.error("Error in removeTrainingFromSupabase:", error);
+      }
     };
 
     const getCurrentUserPersonIndex = () => {
@@ -631,15 +693,22 @@ export default {
     };
 
     const handleDailyStatsSaved = async (statsData) => {
+      console.log("=== SAVING DAILY STATS ===");
+      console.log("Stats data:", statsData);
+      console.log("Selected date:", selectedComparisonDate.value);
+
       const personIndex = getCurrentUserPersonIndex();
       const person = persons.value[personIndex];
+      console.log("Person index:", personIndex);
+      console.log("Person:", person);
 
       // Add date to the stats
       const statsWithDate = {
         ...statsData,
-        date: selectedDate.value,
+        date: selectedComparisonDate.value,
         timestamp: new Date().toISOString(),
       };
+      console.log("Stats with date:", statsWithDate);
 
       // Store daily stats with date
       if (!person.dailyStats) {
@@ -648,16 +717,21 @@ export default {
 
       // Check if stats for this date already exist
       const existingStatsIndex = person.dailyStats.findIndex(
-        (stat) => stat.date === selectedDate.value
+        (stat) => stat.date === selectedComparisonDate.value
       );
+      console.log("Existing stats index:", existingStatsIndex);
 
       if (existingStatsIndex !== -1) {
         // Update existing stats
         person.dailyStats[existingStatsIndex] = statsWithDate;
+        console.log("Updated existing stats");
       } else {
         // Add new stats
         person.dailyStats.push(statsWithDate);
+        console.log("Added new stats");
       }
+
+      console.log("Final dailyStats:", person.dailyStats);
 
       // Update total metrics (only add new values, don't accumulate)
       const previousStats =
@@ -689,6 +763,7 @@ export default {
 
       // Przekieruj na porównanie żeby zobaczyć zmiany
       activeTab.value = "comparison";
+      console.log("=== END SAVING DAILY STATS ===");
     };
 
     const loadStatsForDate = (date) => {
@@ -713,6 +788,7 @@ export default {
       const person = persons.value[personIndex];
       console.log("✅ Person data:", person);
       console.log("✅ Person dailyStats:", person.dailyStats);
+      console.log("✅ Person dailyStats length:", person.dailyStats?.length);
 
       // Znajdź dane dla tego dnia
       const statsForDate = person.dailyStats?.find(
@@ -720,6 +796,10 @@ export default {
       );
 
       console.log("🔍 Found stats for date:", statsForDate);
+      console.log(
+        "🔍 All dailyStats dates:",
+        person.dailyStats?.map((s) => s.date)
+      );
 
       // Ustaw dane w formularzu
       if (dailyDataFormRef.value && dailyDataFormRef.value.setStatsData) {
@@ -920,6 +1000,8 @@ export default {
               .eq("user_id", userData.id)
               .order("date", { ascending: false });
 
+            console.log(`📊 Daily stats for ${username}:`, dailyStats);
+
             // Załaduj metryki
             const { data: metrics } = await supabase
               .from("user_metrics")
@@ -977,6 +1059,15 @@ export default {
         if (loadedPersons.length > 0) {
           console.log("Loaded data from Supabase:", loadedPersons);
           persons.value = loadedPersons;
+
+          // Po załadowaniu danych, załaduj stats dla aktualnie wybranego dnia
+          setTimeout(() => {
+            console.log(
+              "🔄 Loading stats after Supabase data load for:",
+              selectedComparisonDate.value
+            );
+            loadStatsForDate(selectedComparisonDate.value);
+          }, 100);
         } else {
           console.log("No data found in Supabase, loading from localStorage");
           loadFromLocalStorage();
@@ -1024,6 +1115,11 @@ export default {
         isLoggedIn.value = true;
         loadDataFromSupabase();
       }
+
+      // Ustaw dzisiejszą datę jako domyślną dla porównania
+      const todayString = getTodayString();
+      selectedComparisonDate.value = todayString;
+      selectedDate.value = todayString;
     });
 
     return {
@@ -1035,6 +1131,7 @@ export default {
       selectedDate,
       today,
       formatSelectedDate,
+      daysUntilChallengeEnd,
       currentMonth,
       currentYear,
       selectedComparisonDate,
@@ -1045,7 +1142,7 @@ export default {
       updatePerson,
       addTraining,
       removeTraining,
-      editTraining,
+      removeTrainingFromSupabase,
       increment,
       decrement,
       handleLoginSuccess,
@@ -1092,7 +1189,7 @@ body {
   background: linear-gradient(145deg, #2c2c2c, #1a1a1a);
   padding: 20px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  border-bottom: 3px solid #ff7f27;
+  border-bottom: 3px solid #00c073;
 }
 
 .header-content {
@@ -1106,7 +1203,7 @@ body {
 .logo {
   font-size: 28px;
   font-weight: bold;
-  color: #ff7f27;
+  color: #00c073;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
@@ -1116,10 +1213,17 @@ body {
   gap: 15px;
 }
 
+.user-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
 .user-avatar {
   width: 40px;
   height: 40px;
-  background: linear-gradient(145deg, #ff7f27, #e66a1a);
+  background: linear-gradient(145deg, #00c073, #00a060);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -1132,6 +1236,17 @@ body {
 .user-name {
   font-size: 16px;
   font-weight: 500;
+  color: #fff;
+}
+
+.challenge-counter {
+  font-size: 12px;
+  color: #ff4444;
+  font-weight: 600;
+  background: rgba(255, 68, 68, 0.15);
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 68, 68, 0.4);
 }
 
 .logout-btn {
@@ -1184,8 +1299,8 @@ body {
 }
 
 .nav-tab.active {
-  color: #ff7f27;
-  border-bottom-color: #ff7f27;
+  color: #00c073;
+  border-bottom-color: #00c073;
   background-color: #2a2a2a;
 }
 
@@ -1196,7 +1311,7 @@ body {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #ff7f27, #e66a1a);
+  background: linear-gradient(90deg, #00c073, #00a060);
 }
 
 /* Main content */
@@ -1229,7 +1344,7 @@ body {
 }
 
 .calendar-title {
-  color: #ff7f27;
+  color: #00c073;
   font-size: 18px;
   font-weight: bold;
 }
@@ -1237,24 +1352,6 @@ body {
 .calendar-nav {
   display: flex;
   gap: 10px;
-}
-
-.calendar-btn {
-  background: linear-gradient(145deg, #ff7f27, #e66a1a);
-  border: none;
-  border-radius: 6px;
-  color: white;
-  padding: 8px 12px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 8px rgba(255, 127, 39, 0.3);
-}
-
-.calendar-btn:hover {
-  background: linear-gradient(145deg, #e66a1a, #d45a0a);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(255, 127, 39, 0.4);
 }
 
 .calendar-week {
@@ -1291,7 +1388,7 @@ body {
 }
 
 .calendar-day.selected {
-  background: linear-gradient(145deg, #ff7f27, #e66a1a);
+  background: linear-gradient(145deg, #00c073, #00a060);
   color: white;
   font-weight: bold;
   box-shadow: 0 4px 8px rgba(255, 127, 39, 0.4);
@@ -1351,7 +1448,7 @@ body {
   position: absolute;
   top: -5px;
   right: -5px;
-  background-color: #ff7f27;
+  background-color: #00c073;
   color: white;
   border-radius: 50%;
   width: 16px;
@@ -1393,7 +1490,7 @@ body {
 .user-avatar {
   width: 60px;
   height: 60px;
-  background: linear-gradient(145deg, #ff7f27, #e66a1a);
+  background: linear-gradient(145deg, #00c073, #00a060);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -1436,7 +1533,7 @@ body {
 }
 
 .section-title {
-  color: #ff7f27;
+  color: #00c073;
   font-size: 16px;
   font-weight: bold;
   margin-bottom: 15px;
@@ -1465,7 +1562,7 @@ body {
 
 .date-input:focus {
   outline: none;
-  border-color: #ff7f27;
+  border-color: #00c073;
   background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3),
     0 0 0 3px rgba(255, 127, 39, 0.2);
@@ -1483,7 +1580,7 @@ body {
 }
 
 .date-btn {
-  background: linear-gradient(145deg, #ff7f27, #e66a1a);
+  background: linear-gradient(145deg, #00c073, #00a060);
   border: none;
   border-radius: 8px;
   color: white;
@@ -1496,7 +1593,7 @@ body {
 }
 
 .date-btn:hover {
-  background: linear-gradient(145deg, #e66a1a, #d45a0a);
+  background: linear-gradient(145deg, #00a060, #008050);
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(255, 127, 39, 0.4);
 }
@@ -1507,8 +1604,23 @@ body {
   text-align: center;
 }
 
+.date-display {
+  text-align: center;
+  padding: 15px;
+  background: rgba(255, 127, 39, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 127, 39, 0.3);
+}
+
+.date-note {
+  color: #888;
+  font-size: 12px;
+  margin-top: 8px;
+  font-style: italic;
+}
+
 .date-info strong {
-  color: #ff7f27;
+  color: #00c073;
 }
 
 /* Login form */
@@ -1572,7 +1684,7 @@ body {
 
 .form-input:focus {
   outline: none;
-  border-color: #ff7f27;
+  border-color: #00c073;
   background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3),
     0 0 0 3px rgba(255, 127, 39, 0.2);
@@ -1587,7 +1699,7 @@ body {
 .login-btn {
   width: 100%;
   padding: 16px 20px;
-  background: linear-gradient(145deg, #ff7f27, #e66a1a);
+  background: linear-gradient(145deg, #00c073, #00a060);
   border: none;
   border-radius: 12px;
   color: white;
@@ -1599,7 +1711,7 @@ body {
 }
 
 .login-btn:hover {
-  background: linear-gradient(145deg, #e66a1a, #d45a0a);
+  background: linear-gradient(145deg, #00a060, #008050);
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(255, 127, 39, 0.5);
 }
@@ -1649,6 +1761,21 @@ body {
 
   .date-actions {
     justify-content: center;
+  }
+
+  .user-info {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+  }
+
+  .user-details {
+    align-items: center;
+  }
+
+  .challenge-counter {
+    font-size: 11px;
+    padding: 1px 6px;
   }
 }
 </style>

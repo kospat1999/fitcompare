@@ -80,7 +80,7 @@ export default {
       calories: 0,
       steps: 0,
       protein: 0,
-      weight: 70.5,
+      weight: null,
       supplements: false,
     });
 
@@ -90,7 +90,7 @@ export default {
         calories: 0,
         steps: 0,
         protein: 0,
-        weight: 70.5,
+        weight: null,
         supplements: false,
       });
     };
@@ -103,6 +103,7 @@ export default {
     watch(
       () => props.selectedDate,
       (newDate) => {
+        console.log("DailyDataForm: selectedDate changed to:", newDate);
         // Emituj event żeby rodzic mógł załadować dane dla tego dnia
         emit("load-stats-for-date", newDate);
       },
@@ -114,13 +115,15 @@ export default {
       console.log("setStatsData called with:", statsData);
       if (statsData) {
         console.log("Setting form data from existing stats");
+        console.log("Before:", dailyStats);
         Object.assign(dailyStats, {
           calories: statsData.calories || 0,
           steps: statsData.steps || 0,
           protein: statsData.protein || 0,
-          weight: statsData.weight || 70.5,
+          weight: statsData.weight || null,
           supplements: statsData.supplements === true, // Dokładnie true/false
         });
+        console.log("After:", dailyStats);
       } else {
         console.log("No existing data, resetting to defaults");
         resetToDefaults();
@@ -186,7 +189,7 @@ export default {
 
 .number-input-simple:focus {
   outline: none;
-  border-color: #ff7f27;
+  border-color: #00c073;
   background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3),
     0 0 0 3px rgba(255, 127, 39, 0.2);
@@ -207,7 +210,7 @@ export default {
 .checkbox-input {
   width: 20px;
   height: 20px;
-  accent-color: #ff7f27;
+  accent-color: #00c073;
   cursor: pointer;
   transition: all 0.3s ease;
 }
@@ -224,7 +227,7 @@ export default {
 .action-btn {
   width: 100%;
   padding: 16px 20px;
-  background: linear-gradient(145deg, #ff7f27, #e66a1a);
+  background: linear-gradient(145deg, #00c073, #00a060);
   border: none;
   border-radius: 12px;
   color: white;
@@ -240,7 +243,7 @@ export default {
 }
 
 .action-btn:hover {
-  background: linear-gradient(145deg, #e66a1a, #d45a0a);
+  background: linear-gradient(145deg, #00a060, #008050);
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(255, 127, 39, 0.5);
 }
