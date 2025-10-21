@@ -4,7 +4,7 @@
       <h3 class="person-title">{{ person.name }}</h3>
       <button class="dumbbell-btn">
         <img
-          :src="person.avatar || '/src/dogpatka.jpg'"
+          :src="person.avatar || '/dogpatka.jpg'"
           :alt="person.name"
           class="avatar-image"
         />

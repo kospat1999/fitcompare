@@ -259,7 +259,7 @@ export default {
     const persons = ref([
       {
         name: "Fiko",
-        avatar: "/src/dogfiko.jpeg", // Zdjęcie golden retrievera
+        avatar: "/dogfiko.jpeg", // Zdjęcie golden retrievera
         trainings: [],
         metrics: {
           trainingTime: 0,
@@ -279,7 +279,7 @@ export default {
       },
       {
         name: "Patka",
-        avatar: "/src/dogpatka.jpg", // Zdjęcie beagle
+        avatar: "/dogpatka.jpg", // Zdjęcie beagle
         trainings: [],
         metrics: {
           trainingTime: 0,
@@ -686,10 +686,10 @@ export default {
     };
 
     const getCurrentUserAvatar = () => {
-      if (!currentUser.value) return "/src/dogpatka.jpg"; // Domyślny avatar
+      if (!currentUser.value) return "/dogpatka.jpg"; // Domyślny avatar
       return currentUser.value.name === "Fiko"
-        ? "/src/dogfiko.jpeg"
-        : "/src/dogpatka.jpg";
+        ? "/dogfiko.jpeg"
+        : "/dogpatka.jpg";
     };
 
     const handleDailyStatsSaved = async (statsData) => {
@@ -1018,8 +1018,7 @@ export default {
 
             loadedPersons.push({
               name: username === "fiko" ? "Fiko" : "Patka",
-              avatar:
-                username === "fiko" ? "/src/dogfiko.jpeg" : "/src/dogpatka.jpg", // Dodaj ścieżki do obrazów
+              avatar: username === "fiko" ? "/dogfiko.jpeg" : "/dogpatka.jpg", // Dodaj ścieżki do obrazów
               trainings: trainings || [],
               dailyStats: dailyStats || [],
               metrics: metrics
