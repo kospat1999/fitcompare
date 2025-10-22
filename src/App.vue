@@ -1432,11 +1432,17 @@ export default {
               .eq("user_id", userData.id)
               .single();
 
+            // Mapuj dailyStats z snake_case na camelCase
+            const mappedDailyStats = (dailyStats || []).map((stat) => ({
+              ...stat,
+              restDay: stat.rest_day || false,
+            }));
+
             loadedPersons.push({
               name: username === "fiko" ? "Fiko" : "Patka",
               avatar: username === "fiko" ? "/dogfiko.jpeg" : "/dogpatka.jpg", // Dodaj ścieżki do obrazów
               trainings: trainings || [],
-              dailyStats: dailyStats || [],
+              dailyStats: mappedDailyStats,
               metrics: metrics
                 ? {
                     trainingTime: metrics.training_time || 0,
