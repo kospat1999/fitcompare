@@ -56,6 +56,18 @@
       </div>
     </div>
 
+    <div class="form-group">
+      <label class="form-label">Rest day</label>
+      <div class="checkbox-container">
+        <input
+          type="checkbox"
+          v-model="dailyStats.restDay"
+          class="checkbox-input"
+        />
+        <span class="checkbox-label">Tak</span>
+      </div>
+    </div>
+
     <button class="action-btn" @click="saveDailyStats">
       <span class="btn-icon">💾</span>
       Zapisz dane dzienne
@@ -86,6 +98,7 @@ export default {
       protein: 0,
       weight: null,
       supplements: false,
+      restDay: false,
     });
 
     // Reset do wartości domyślnych (tylko gdy nie ma danych)
@@ -96,6 +109,7 @@ export default {
         protein: 0,
         weight: null,
         supplements: false,
+        restDay: false,
       });
     };
 
@@ -130,6 +144,7 @@ export default {
           weight:
             statsForDate.weight !== undefined ? statsForDate.weight : null,
           supplements: statsForDate.supplements === true,
+          restDay: statsForDate.restDay === true,
         });
       } else {
         console.log("DailyDataForm: No existing data, resetting to defaults");

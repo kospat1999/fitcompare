@@ -4,17 +4,6 @@
 
     <form @submit.prevent="saveGoals" class="goals-form">
       <div class="form-group">
-        <label class="form-label">Czas treningu (min)</label>
-        <input
-          type="number"
-          v-model.number="goals.training_time_goal"
-          min="1"
-          max="300"
-          class="number-input-simple"
-        />
-      </div>
-
-      <div class="form-group">
         <label class="form-label">Kalorie (max)</label>
         <input
           type="number"
@@ -125,7 +114,6 @@ export default {
   emits: ["goals-saved"],
   setup(props, { emit }) {
     const goals = reactive({
-      training_time_goal: 60,
       calories_goal: 2000,
       steps_goal: 10000,
       protein_goal: 100.0,
@@ -178,7 +166,6 @@ export default {
 
         if (data) {
           Object.assign(goals, {
-            training_time_goal: data.training_time_goal || 60,
             calories_goal: data.calories_goal || 2000,
             steps_goal: data.steps_goal || 10000,
             protein_goal: data.protein_goal || 100.0,
@@ -195,7 +182,6 @@ export default {
         const { error } = await supabase.from("user_goals").upsert(
           {
             user_id: props.userId,
-            training_time_goal: goals.training_time_goal,
             calories_goal: goals.calories_goal,
             steps_goal: goals.steps_goal,
             protein_goal: goals.protein_goal,

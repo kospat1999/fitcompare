@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS daily_stats (
   protein DECIMAL(5,1) DEFAULT 0,
   weight DECIMAL(5,1) DEFAULT NULL,
   supplements BOOLEAN DEFAULT FALSE,
+  rest_day BOOLEAN DEFAULT FALSE,
   timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -50,6 +51,7 @@ CREATE TABLE IF NOT EXISTS user_metrics (
   steps INTEGER DEFAULT 0, -- suma kroków
   protein DECIMAL(8,1) DEFAULT 0, -- suma białka
   supplements BOOLEAN DEFAULT FALSE, -- ostatni stan suplementów
+  rest_day BOOLEAN DEFAULT FALSE, -- ostatni stan rest day
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -71,6 +73,10 @@ CREATE TABLE IF NOT EXISTS user_goals (
 -- 5.1. Dodaj kolumnę target_weight jeśli nie istnieje (dla istniejących tabel)
 ALTER TABLE user_goals ADD COLUMN IF NOT EXISTS target_weight DECIMAL(5,1) DEFAULT NULL;
 
+-- 5.2. Dodaj kolumnę rest_day jeśli nie istnieje (dla istniejących tabel)
+ALTER TABLE user_metrics ADD COLUMN IF NOT EXISTS rest_day BOOLEAN DEFAULT FALSE;
+ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS rest_day BOOLEAN DEFAULT FALSE;
+
 -- 6. Wstawienie użytkowników
 INSERT INTO users (username, password, name) VALUES
 ('fiko', 'Test1234!', 'Fiko'),
@@ -91,10 +97,10 @@ WHERE u.username IN ('fiko', 'patka')
 ON CONFLICT (user_id) DO NOTHING;
 
 -- 6. Wstawienie początkowych metryk dla użytkowników
-INSERT INTO user_metrics (user_id, training_time, distance, calories, steps, protein, supplements)
+INSERT INTO user_metrics (user_id, training_time, distance, calories, steps, protein, supplements, rest_day)
 SELECT 
   u.id,
-  0, 0, 0, 0, 0, FALSE
+  0, 0, 0, 0, 0, FALSE, FALSE
 FROM users u
 WHERE u.username IN ('fiko', 'patka')
 ON CONFLICT (user_id) DO NOTHING;
@@ -192,6 +198,7 @@ BEGIN
             WHERE user_id = NEW.user_id
         ),
         supplements = NEW.supplements,
+        rest_day = NEW.rest_day,
         updated_at = NOW()
     WHERE user_id = NEW.user_id;
     

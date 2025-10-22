@@ -59,29 +59,34 @@
     <div class="metrics-grid">
       <div
         class="metric-card"
-        :class="{ 'goal-achieved': isTrainingGoalAchieved }"
+        :class="{
+          'goal-achieved':
+            hasTrainingForSelectedDate || isRestDayForSelectedDate,
+          'goal-not-achieved':
+            !hasTrainingForSelectedDate && !isRestDayForSelectedDate,
+        }"
       >
         <div class="metric-label">
-          <span class="metric-icon">⏱</span>
-          <span>Czas treningu</span>
+          <span class="metric-icon">💪</span>
+          <span>Trening</span>
         </div>
-        <div class="metric-value">{{ getSelectedDateTrainingTime }} min</div>
-        <div class="goal-info">
-          {{ getSelectedDateTrainingTime }}/{{ goals.training_time_goal }} min
+        <div class="metric-value">
+          {{
+            hasTrainingForSelectedDate
+              ? "Zrobiony"
+              : isRestDayForSelectedDate
+              ? "Rest day"
+              : "Nie zrobiony"
+          }}
         </div>
-      </div>
-
-      <div class="metric-card">
-        <div class="metric-label">
-          <span class="metric-icon">📏</span>
-          <span>Dystans</span>
-        </div>
-        <div class="metric-value">{{ person.metrics.distance }} km</div>
       </div>
 
       <div
         class="metric-card"
-        :class="{ 'goal-achieved': isCaloriesGoalAchieved }"
+        :class="{
+          'goal-achieved': isCaloriesGoalAchieved,
+          'goal-not-achieved': !isCaloriesGoalAchieved,
+        }"
       >
         <div class="metric-label">
           <span class="metric-icon">🔥</span>
@@ -95,7 +100,10 @@
 
       <div
         class="metric-card"
-        :class="{ 'goal-achieved': isStepsGoalAchieved }"
+        :class="{
+          'goal-achieved': isStepsGoalAchieved,
+          'goal-not-achieved': !isStepsGoalAchieved,
+        }"
       >
         <div class="metric-label">
           <span class="metric-icon">👟</span>
@@ -109,7 +117,10 @@
 
       <div
         class="metric-card"
-        :class="{ 'goal-achieved': isProteinGoalAchieved }"
+        :class="{
+          'goal-achieved': isProteinGoalAchieved,
+          'goal-not-achieved': !isProteinGoalAchieved,
+        }"
       >
         <div class="metric-label">
           <span class="metric-icon">🥩</span>
@@ -123,7 +134,10 @@
 
       <div
         class="metric-card"
-        :class="{ 'goal-achieved': isSupplementsGoalAchieved }"
+        :class="{
+          'goal-achieved': isSupplementsGoalAchieved,
+          'goal-not-achieved': !isSupplementsGoalAchieved,
+        }"
       >
         <div class="metric-label">
           <span class="metric-icon">💊</span>
@@ -218,6 +232,19 @@ export default {
         (stat) => stat.date === this.selectedDate
       );
       return statsForDate?.supplements || false;
+    },
+    hasTrainingForSelectedDate() {
+      if (!this.selectedDate) return this.person.trainings.length > 0;
+      return this.person.trainings.some(
+        (training) => training.date === this.selectedDate
+      );
+    },
+    isRestDayForSelectedDate() {
+      if (!this.selectedDate) return this.person.metrics.restDay;
+      const statsForDate = this.person.dailyStats?.find(
+        (stat) => stat.date === this.selectedDate
+      );
+      return statsForDate?.restDay === true;
     },
     // Funkcje sprawdzania osiągnięć
     isTrainingGoalAchieved() {
@@ -476,6 +503,26 @@ export default {
 
 .metric-card.goal-achieved .goal-info {
   color: rgba(34, 197, 94, 0.8);
+  font-weight: 600;
+}
+
+.metric-card.goal-not-achieved {
+  background: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.2),
+    rgba(220, 38, 38, 0.3)
+  );
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.metric-card.goal-not-achieved .metric-value {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+.metric-card.goal-not-achieved .goal-info {
+  color: rgba(239, 68, 68, 0.8);
   font-weight: 600;
 }
 

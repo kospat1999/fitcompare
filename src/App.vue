@@ -505,6 +505,7 @@ export default {
           steps: 0,
           protein: 0,
           supplements: false,
+          restDay: false,
         },
         dailyStats: [],
         goals: {
@@ -526,6 +527,7 @@ export default {
           steps: 0,
           protein: 0,
           supplements: false,
+          restDay: false,
         },
         dailyStats: [],
         goals: {
@@ -1099,6 +1101,7 @@ export default {
       }
 
       person.metrics.supplements = statsData.supplements;
+      person.metrics.restDay = statsData.restDay;
 
       await saveToSupabase();
 
@@ -1244,6 +1247,7 @@ export default {
                           ? dailyStat.weight
                           : null,
                       supplements: dailyStat.supplements || false,
+                      rest_day: dailyStat.restDay || false,
                       timestamp: dailyStat.timestamp,
                     },
                     {
@@ -1269,6 +1273,7 @@ export default {
                   steps: person.metrics.steps || 0,
                   protein: person.metrics.protein || 0,
                   supplements: person.metrics.supplements || false,
+                  rest_day: person.metrics.restDay || false,
                 },
                 {
                   onConflict: "user_id",
@@ -1373,6 +1378,7 @@ export default {
                     steps: metrics.steps || 0,
                     protein: metrics.protein || 0,
                     supplements: metrics.supplements || false,
+                    restDay: metrics.rest_day || false,
                   }
                 : {
                     trainingTime: 0,
@@ -1381,6 +1387,7 @@ export default {
                     steps: 0,
                     protein: 0,
                     supplements: false,
+                    restDay: false,
                   },
               goals: goals
                 ? {
