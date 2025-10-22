@@ -6,42 +6,46 @@
     <!-- Main App -->
     <div v-else>
       <header class="header">
-        <div class="logo">
-          <div class="logo-text">
-            <span class="fit">Fit</span><span class="compare">Compare</span>
+        <div class="header-left">
+          <div class="logo">
+            <div class="logo-text">
+              <span class="fit">Fit</span><span class="compare">Compare</span>
+            </div>
           </div>
         </div>
-        <nav class="nav-tabs">
-          <button
-            class="nav-tab"
-            :class="{ active: activeTab === 'comparison' }"
-            @click="activeTab = 'comparison'"
-          >
-            Porównanie
-          </button>
-          <button
-            class="nav-tab"
-            :class="{ active: activeTab === 'add-training' }"
-            @click="activeTab = 'add-training'"
-          >
-            Dodaj trening
-          </button>
-          <button
-            class="nav-tab"
-            :class="{ active: activeTab === 'add-daily-data' }"
-            @click="handleDailyDataTabClick"
-          >
-            Uzupełnij dane
-          </button>
-          <button
-            class="nav-tab"
-            :class="{ active: activeTab === 'goals' }"
-            @click="activeTab = 'goals'"
-          >
-            Cele
-          </button>
-        </nav>
-        <div class="user-info">
+        <div class="header-center">
+          <nav class="nav-tabs">
+            <button
+              class="nav-tab"
+              :class="{ active: activeTab === 'comparison' }"
+              @click="activeTab = 'comparison'"
+            >
+              Porównanie
+            </button>
+            <button
+              class="nav-tab"
+              :class="{ active: activeTab === 'add-training' }"
+              @click="activeTab = 'add-training'"
+            >
+              Dodaj trening
+            </button>
+            <button
+              class="nav-tab"
+              :class="{ active: activeTab === 'add-daily-data' }"
+              @click="handleDailyDataTabClick"
+            >
+              Uzupełnij dane
+            </button>
+            <button
+              class="nav-tab"
+              :class="{ active: activeTab === 'goals' }"
+              @click="activeTab = 'goals'"
+            >
+              Cele
+            </button>
+          </nav>
+        </div>
+        <div class="header-right">
           <div class="user-details">
             <span class="user-name">{{ currentUser.name }}</span>
             <span class="challenge-counter">
@@ -60,24 +64,14 @@
             <div class="calendar-controls">
               <button
                 class="calendar-btn prev"
-                @click="previousMonth"
-                title="Poprzedni miesiąc"
-              ></button>
-              <button
-                class="calendar-btn prev"
                 @click="goToPreviousWeek"
                 title="Poprzedni tydzień"
               ></button>
-              <h4 class="current-month">{{ currentMonthYear }}</h4>
+              <h4 class="current-month">{{ currentWeekRange }}</h4>
               <button
                 class="calendar-btn next"
                 @click="goToNextWeek"
                 title="Następny tydzień"
-              ></button>
-              <button
-                class="calendar-btn next"
-                @click="nextMonth"
-                title="Następny miesiąc"
               ></button>
             </div>
             <div class="calendar-horizontal">
@@ -135,6 +129,248 @@
               @update-person="updatePerson"
               @remove-training="removeTraining"
             />
+          </div>
+
+          <!-- Weekly Averages Summary -->
+          <div class="weekly-averages-summary">
+            <h3 class="summary-title">📈 Średnie z ostatniego tygodnia</h3>
+            <div class="summary-cards">
+              <div class="summary-card" v-if="fikoWeeklyAverages.daysCount > 0">
+                <div class="summary-header">
+                  <img
+                    :src="persons[0].avatar"
+                    :alt="persons[0].name"
+                    class="summary-avatar"
+                  />
+                  <h4>{{ persons[0].name }}</h4>
+                </div>
+                <div class="summary-stats">
+                  <div class="stat-item">
+                    <span class="label">Kroki:</span>
+                    <span class="value">{{
+                      fikoWeeklyAverages.steps.toLocaleString()
+                    }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="label">Kalorie:</span>
+                    <span class="value">{{
+                      fikoWeeklyAverages.calories.toLocaleString()
+                    }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="label">Białko:</span>
+                    <span class="value">{{ fikoWeeklyAverages.protein }}g</span>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="summary-card"
+                v-if="patkaWeeklyAverages.daysCount > 0"
+              >
+                <div class="summary-header">
+                  <img
+                    :src="persons[1].avatar"
+                    :alt="persons[1].name"
+                    class="summary-avatar"
+                  />
+                  <h4>{{ persons[1].name }}</h4>
+                </div>
+                <div class="summary-stats">
+                  <div class="stat-item">
+                    <span class="label">Kroki:</span>
+                    <span class="value">{{
+                      patkaWeeklyAverages.steps.toLocaleString()
+                    }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="label">Kalorie:</span>
+                    <span class="value">{{
+                      patkaWeeklyAverages.calories.toLocaleString()
+                    }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="label">Białko:</span>
+                    <span class="value"
+                      >{{ patkaWeeklyAverages.protein }}g</span
+                    >
+                  </div>
+                </div>
+              </div>
+              <div
+                class="no-data-message"
+                v-if="
+                  fikoWeeklyAverages.daysCount === 0 &&
+                  patkaWeeklyAverages.daysCount === 0
+                "
+              >
+                <p>
+                  📝 Brak danych z ostatniego tygodnia. Dodaj dane w sekcji
+                  "Uzupełnij dane" aby zobaczyć średnie.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Weight Loss Summary -->
+          <div class="weight-loss-summary">
+            <h3 class="summary-title">📊 Podsumowanie utraty wagi</h3>
+            <div class="summary-cards">
+              <div class="summary-card" v-if="fikoWeightLoss.hasData">
+                <div class="summary-header">
+                  <img
+                    :src="persons[0].avatar"
+                    :alt="persons[0].name"
+                    class="summary-avatar"
+                  />
+                  <h4>{{ persons[0].name }}</h4>
+                </div>
+                <div class="summary-stats">
+                  <div class="weight-stat">
+                    <span class="label">Początkowa waga:</span>
+                    <span class="value"
+                      >{{ fikoWeightLoss.firstWeight }}kg</span
+                    >
+                  </div>
+                  <div class="weight-stat">
+                    <span class="label">Aktualna waga:</span>
+                    <span class="value">{{ fikoWeightLoss.lastWeight }}kg</span>
+                  </div>
+                  <div
+                    class="weight-stat loss"
+                    :class="{
+                      positive: fikoWeightLoss.loss > 0,
+                      negative: fikoWeightLoss.loss < 0,
+                    }"
+                  >
+                    <span class="label">Zmiana:</span>
+                    <span class="value"
+                      >{{ fikoWeightLoss.loss > 0 ? "+" : ""
+                      }}{{ fikoWeightLoss.loss.toFixed(1) }}kg</span
+                    >
+                  </div>
+                  <div class="entries-count">
+                    <span class="label">Pomiary:</span>
+                    <span class="value">{{ fikoWeightLoss.entriesCount }}</span>
+                  </div>
+
+                  <!-- Informacje o celu -->
+                  <div v-if="fikoWeightLoss.hasGoal" class="goal-info">
+                    <div class="weight-stat">
+                      <span class="label">Waga docelowa:</span>
+                      <span class="value"
+                        >{{ fikoWeightLoss.targetWeight }}kg</span
+                      >
+                    </div>
+                    <div
+                      class="weight-stat"
+                      :class="{
+                        positive: fikoWeightLoss.weightToGoal > 0,
+                        negative: fikoWeightLoss.weightToGoal < 0,
+                      }"
+                    >
+                      <span class="label">Do celu:</span>
+                      <span class="value"
+                        >{{ fikoWeightLoss.weightToGoal > 0 ? "+" : ""
+                        }}{{ fikoWeightLoss.weightToGoal.toFixed(1) }}kg</span
+                      >
+                    </div>
+                    <div
+                      v-if="fikoWeightLoss.dailyDeficit > 0"
+                      class="weight-stat highlight"
+                    >
+                      <span class="label">Dzienny deficyt:</span>
+                      <span class="value"
+                        >{{ fikoWeightLoss.dailyDeficit }} kcal</span
+                      >
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="summary-card" v-if="patkaWeightLoss.hasData">
+                <div class="summary-header">
+                  <img
+                    :src="persons[1].avatar"
+                    :alt="persons[1].name"
+                    class="summary-avatar"
+                  />
+                  <h4>{{ persons[1].name }}</h4>
+                </div>
+                <div class="summary-stats">
+                  <div class="weight-stat">
+                    <span class="label">Początkowa waga:</span>
+                    <span class="value"
+                      >{{ patkaWeightLoss.firstWeight }}kg</span
+                    >
+                  </div>
+                  <div class="weight-stat">
+                    <span class="label">Aktualna waga:</span>
+                    <span class="value"
+                      >{{ patkaWeightLoss.lastWeight }}kg</span
+                    >
+                  </div>
+                  <div
+                    class="weight-stat loss"
+                    :class="{
+                      positive: patkaWeightLoss.loss > 0,
+                      negative: patkaWeightLoss.loss < 0,
+                    }"
+                  >
+                    <span class="label">Zmiana:</span>
+                    <span class="value"
+                      >{{ patkaWeightLoss.loss > 0 ? "+" : ""
+                      }}{{ patkaWeightLoss.loss.toFixed(1) }}kg</span
+                    >
+                  </div>
+                  <div class="entries-count">
+                    <span class="label">Pomiary:</span>
+                    <span class="value">{{
+                      patkaWeightLoss.entriesCount
+                    }}</span>
+                  </div>
+
+                  <!-- Informacje o celu -->
+                  <div v-if="patkaWeightLoss.hasGoal" class="goal-info">
+                    <div class="weight-stat">
+                      <span class="label">Waga docelowa:</span>
+                      <span class="value"
+                        >{{ patkaWeightLoss.targetWeight }}kg</span
+                      >
+                    </div>
+                    <div
+                      class="weight-stat"
+                      :class="{
+                        positive: patkaWeightLoss.weightToGoal > 0,
+                        negative: patkaWeightLoss.weightToGoal < 0,
+                      }"
+                    >
+                      <span class="label">Do celu:</span>
+                      <span class="value"
+                        >{{ patkaWeightLoss.weightToGoal > 0 ? "+" : ""
+                        }}{{ patkaWeightLoss.weightToGoal.toFixed(1) }}kg</span
+                      >
+                    </div>
+                    <div
+                      v-if="patkaWeightLoss.dailyDeficit > 0"
+                      class="weight-stat highlight"
+                    >
+                      <span class="label">Dzienny deficyt:</span>
+                      <span class="value"
+                        >{{ patkaWeightLoss.dailyDeficit }} kcal</span
+                      >
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="no-data-message"
+                v-if="!fikoWeightLoss.hasData && !patkaWeightLoss.hasData"
+              >
+                <p>
+                  📝 Brak danych o wadze. Dodaj pomiary wagi w sekcji "Uzupełnij
+                  dane" aby zobaczyć podsumowanie.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -215,8 +451,8 @@
           <DailyDataForm
             ref="dailyDataFormRef"
             :selected-date="selectedComparisonDate"
+            :person-data="persons[getCurrentUserPersonIndex()]"
             @daily-stats-saved="handleDailyStatsSaved"
-            @load-stats-for-date="loadStatsForDate"
           />
         </div>
 
@@ -224,6 +460,7 @@
         <div v-if="activeTab === 'goals'" class="goals-container">
           <GoalsForm
             :user-id="currentUser.id"
+            :person-data="persons[getCurrentUserPersonIndex()]"
             @goals-saved="handleGoalsSaved"
           />
         </div>
@@ -275,6 +512,7 @@ export default {
           calories_goal: 2000,
           steps_goal: 10000,
           protein_goal: 100.0,
+          target_weight: null,
         },
       },
       {
@@ -295,6 +533,7 @@ export default {
           calories_goal: 2000,
           steps_goal: 10000,
           protein_goal: 100.0,
+          target_weight: null,
         },
       },
     ]);
@@ -303,7 +542,7 @@ export default {
       calories: 0,
       steps: 0,
       protein: 0,
-      weight: 70.5,
+      weight: null,
       supplements: false,
     });
 
@@ -326,22 +565,40 @@ export default {
 
     const weekDays = ["Pon", "Wto", "Śro", "Czw", "Pią", "Sob", "Nie"];
 
-    const currentMonthYear = computed(() => {
+    const currentWeekRange = computed(() => {
+      if (currentWeekDays.value.length === 0) return "";
+
+      const firstDay = currentWeekDays.value[0];
+      const lastDay = currentWeekDays.value[currentWeekDays.value.length - 1];
+
+      const firstDate = new Date(firstDay.date);
+      const lastDate = new Date(lastDay.date);
+
       const monthNames = [
-        "Styczeń",
-        "Luty",
-        "Marzec",
-        "Kwiecień",
+        "Sty",
+        "Lut",
+        "Mar",
+        "Kwi",
         "Maj",
-        "Czerwiec",
-        "Lipiec",
-        "Sierpień",
-        "Wrzesień",
-        "Październik",
-        "Listopad",
-        "Grudzień",
+        "Cze",
+        "Lip",
+        "Sie",
+        "Wrz",
+        "Paź",
+        "Lis",
+        "Gru",
       ];
-      return `${monthNames[currentMonth.value]} ${currentYear.value}`;
+
+      const firstMonth = monthNames[firstDate.getMonth()];
+      const lastMonth = monthNames[lastDate.getMonth()];
+      const firstDayNum = firstDate.getDate();
+      const lastDayNum = lastDate.getDate();
+
+      if (firstDate.getMonth() === lastDate.getMonth()) {
+        return `${firstDayNum}-${lastDayNum} ${firstMonth} ${firstDate.getFullYear()}`;
+      } else {
+        return `${firstDayNum} ${firstMonth} - ${lastDayNum} ${lastMonth} ${firstDate.getFullYear()}`;
+      }
     });
 
     const formatComparisonDate = computed(() => {
@@ -353,6 +610,137 @@ export default {
         day: "numeric",
       });
     });
+
+    const getWeightLossSummary = (personIndex) => {
+      const person = persons.value[personIndex];
+      if (!person.dailyStats || person.dailyStats.length === 0) {
+        return {
+          firstWeight: null,
+          lastWeight: null,
+          loss: 0,
+          hasData: false,
+          targetWeight: null,
+          weightToGoal: 0,
+          dailyDeficit: 0,
+          hasGoal: false,
+        };
+      }
+
+      // Filtruj tylko wpisy z wagą
+      const weightEntries = person.dailyStats.filter(
+        (stat) => stat.weight !== null && stat.weight !== undefined
+      );
+
+      if (weightEntries.length === 0) {
+        return {
+          firstWeight: null,
+          lastWeight: null,
+          loss: 0,
+          hasData: false,
+          targetWeight: null,
+          weightToGoal: 0,
+          dailyDeficit: 0,
+          hasGoal: false,
+        };
+      }
+
+      // Sortuj po dacie
+      const sortedEntries = weightEntries.sort(
+        (a, b) => new Date(a.date) - new Date(b.date)
+      );
+
+      const firstWeight = sortedEntries[0].weight;
+      const lastWeight = sortedEntries[sortedEntries.length - 1].weight;
+      const loss = firstWeight - lastWeight;
+
+      // Oblicz cele i deficyt
+      const targetWeight = person.goals?.target_weight || null;
+      const weightToGoal = targetWeight ? lastWeight - targetWeight : 0;
+
+      // Oblicz dni do końca wyzwania
+      const today = new Date();
+      const challengeEnd = new Date("2026-01-31");
+      const timeDiff = challengeEnd.getTime() - today.getTime();
+      const daysRemaining = Math.max(
+        0,
+        Math.ceil(timeDiff / (1000 * 3600 * 24))
+      );
+
+      // Oblicz dzienny deficyt (1kg = 7000 kcal)
+      const dailyDeficit =
+        weightToGoal > 0 && daysRemaining > 0
+          ? Math.round((weightToGoal * 7000) / daysRemaining)
+          : 0;
+
+      return {
+        firstWeight,
+        lastWeight,
+        loss,
+        hasData: true,
+        entriesCount: sortedEntries.length,
+        targetWeight,
+        weightToGoal,
+        dailyDeficit,
+        hasGoal: targetWeight !== null,
+      };
+    };
+
+    const fikoWeightLoss = computed(() => getWeightLossSummary(0));
+    const patkaWeightLoss = computed(() => getWeightLossSummary(1));
+
+    // Funkcja do obliczania średnich z ostatniego tygodnia
+    const getWeeklyAverages = (personIndex) => {
+      const person = persons.value[personIndex];
+      if (!person.dailyStats || person.dailyStats.length === 0) {
+        return { steps: 0, calories: 0, protein: 0, daysCount: 0 };
+      }
+
+      const today = new Date();
+      const weekAgo = new Date(today);
+      weekAgo.setDate(today.getDate() - 7);
+
+      // Filtruj dane z ostatniego tygodnia
+      const weeklyStats = person.dailyStats.filter((stat) => {
+        const statDate = new Date(stat.date);
+        return statDate >= weekAgo && statDate <= today;
+      });
+
+      if (weeklyStats.length === 0) {
+        return { steps: 0, calories: 0, protein: 0, daysCount: 0 };
+      }
+
+      // Oblicz średnie tylko z dni, które mają dane
+      const validStats = weeklyStats.filter(
+        (stat) => stat.steps > 0 || stat.calories > 0 || stat.protein > 0
+      );
+
+      if (validStats.length === 0) {
+        return { steps: 0, calories: 0, protein: 0, daysCount: 0 };
+      }
+
+      const totalSteps = validStats.reduce(
+        (sum, stat) => sum + (stat.steps || 0),
+        0
+      );
+      const totalCalories = validStats.reduce(
+        (sum, stat) => sum + (stat.calories || 0),
+        0
+      );
+      const totalProtein = validStats.reduce(
+        (sum, stat) => sum + (stat.protein || 0),
+        0
+      );
+
+      return {
+        steps: Math.round(totalSteps / validStats.length),
+        calories: Math.round(totalCalories / validStats.length),
+        protein: Math.round(totalProtein / validStats.length),
+        daysCount: validStats.length,
+      };
+    };
+
+    const fikoWeeklyAverages = computed(() => getWeeklyAverages(0));
+    const patkaWeeklyAverages = computed(() => getWeeklyAverages(1));
 
     const currentWeekDays = computed(() => {
       const days = [];
@@ -406,44 +794,6 @@ export default {
       );
 
       return hasDailyStats || hasTrainings;
-    };
-
-    const previousMonth = () => {
-      if (currentMonth.value === 0) {
-        currentMonth.value = 11;
-        currentYear.value--;
-      } else {
-        currentMonth.value--;
-      }
-
-      // Update selectedComparisonDate to first day of the new month
-      const firstDayOfMonth = new Date(
-        currentYear.value,
-        currentMonth.value,
-        1
-      );
-      selectedComparisonDate.value = firstDayOfMonth
-        .toISOString()
-        .split("T")[0];
-    };
-
-    const nextMonth = () => {
-      if (currentMonth.value === 11) {
-        currentMonth.value = 0;
-        currentYear.value++;
-      } else {
-        currentMonth.value++;
-      }
-
-      // Update selectedComparisonDate to first day of the new month
-      const firstDayOfMonth = new Date(
-        currentYear.value,
-        currentMonth.value,
-        1
-      );
-      selectedComparisonDate.value = firstDayOfMonth
-        .toISOString()
-        .split("T")[0];
     };
 
     const selectComparisonDate = (date) => {
@@ -518,7 +868,8 @@ export default {
             calories: statsForDate.calories || 0,
             steps: statsForDate.steps || 0,
             protein: statsForDate.protein || 0,
-            weight: statsForDate.weight || 70.5,
+            weight:
+              statsForDate.weight !== undefined ? statsForDate.weight : null,
             supplements: statsForDate.supplements || false,
           });
         } else {
@@ -527,7 +878,7 @@ export default {
             calories: 0,
             steps: 0,
             protein: 0,
-            weight: 70.5,
+            weight: null,
             supplements: false,
           });
         }
@@ -611,17 +962,7 @@ export default {
 
     const handleDailyDataTabClick = () => {
       activeTab.value = "add-daily-data";
-      // Załaduj dane dla wybranego dnia z kalendarza po przejściu na zakładkę
-      // Użyj nextTick żeby poczekać na renderowanie komponentu
-      nextTick(() => {
-        setTimeout(() => {
-          console.log(
-            "handleDailyDataTabClick - loading stats for:",
-            selectedComparisonDate.value
-          );
-          loadStatsForDate(selectedComparisonDate.value);
-        }, 500); // Zwiększyłem timeout do 500ms
-      });
+      // DailyDataForm sam załaduje dane przez watch na selectedDate
     };
 
     const removeTraining = async (personIndex, trainingIndex) => {
@@ -898,7 +1239,10 @@ export default {
                       calories: dailyStat.calories || 0,
                       steps: dailyStat.steps || 0,
                       protein: dailyStat.protein || 0,
-                      weight: dailyStat.weight || 70.5,
+                      weight:
+                        dailyStat.weight !== undefined
+                          ? dailyStat.weight
+                          : null,
                       supplements: dailyStat.supplements || false,
                       timestamp: dailyStat.timestamp,
                     },
@@ -1044,12 +1388,14 @@ export default {
                     calories_goal: goals.calories_goal || 2000,
                     steps_goal: goals.steps_goal || 10000,
                     protein_goal: goals.protein_goal || 100.0,
+                    target_weight: goals.target_weight || null,
                   }
                 : {
                     training_time_goal: 60,
                     calories_goal: 2000,
                     steps_goal: 10000,
                     protein_goal: 100.0,
+                    target_weight: null,
                   },
             });
           }
@@ -1135,7 +1481,11 @@ export default {
       currentYear,
       selectedComparisonDate,
       weekDays,
-      currentMonthYear,
+      currentWeekRange,
+      fikoWeightLoss,
+      patkaWeightLoss,
+      fikoWeeklyAverages,
+      patkaWeeklyAverages,
       formatComparisonDate,
       currentWeekDays,
       updatePerson,
@@ -1151,8 +1501,6 @@ export default {
       setToday,
       setYesterday,
       loadDailyStatsForDate,
-      previousMonth,
-      nextMonth,
       selectComparisonDate,
       goToPreviousWeek,
       goToNextWeek,

@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS daily_stats (
   calories INTEGER DEFAULT 0,
   steps INTEGER DEFAULT 0,
   protein DECIMAL(5,1) DEFAULT 0,
-  weight DECIMAL(5,1) DEFAULT 70.5,
+  weight DECIMAL(5,1) DEFAULT NULL,
   supplements BOOLEAN DEFAULT FALSE,
   timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -62,10 +62,14 @@ CREATE TABLE IF NOT EXISTS user_goals (
   calories_goal INTEGER DEFAULT 2000, -- cel kalorii
   steps_goal INTEGER DEFAULT 10000, -- cel kroków
   protein_goal DECIMAL(5,1) DEFAULT 100.0, -- cel białka w gramach
+  target_weight DECIMAL(5,1) DEFAULT NULL, -- waga docelowa w kg
   supplements_goal BOOLEAN DEFAULT TRUE, -- zawsze true
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- 5.1. Dodaj kolumnę target_weight jeśli nie istnieje (dla istniejących tabel)
+ALTER TABLE user_goals ADD COLUMN IF NOT EXISTS target_weight DECIMAL(5,1) DEFAULT NULL;
 
 -- 6. Wstawienie użytkowników
 INSERT INTO users (username, password, name) VALUES

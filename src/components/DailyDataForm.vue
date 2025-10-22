@@ -64,7 +64,7 @@
 </template>
 
 <script>
-import { reactive, watch, defineExpose } from "vue";
+import { reactive, watch } from "vue";
 
 export default {
   name: "DailyDataForm",
@@ -73,8 +73,12 @@ export default {
       type: String,
       required: true,
     },
+    personData: {
+      type: Object,
+      required: true,
+    },
   },
-  emits: ["daily-stats-saved", "load-stats-for-date"],
+  emits: ["daily-stats-saved"],
   setup(props, { emit }) {
     const dailyStats = reactive({
       calories: 0,
@@ -99,46 +103,66 @@ export default {
       emit("daily-stats-saved", { ...dailyStats });
     };
 
-    // Obserwuj zmiany wybranego dnia
-    watch(
-      () => props.selectedDate,
-      (newDate) => {
-        console.log("DailyDataForm: selectedDate changed to:", newDate);
-        // Emituj event żeby rodzic mógł załadować dane dla tego dnia
-        emit("load-stats-for-date", newDate);
-      },
-      { immediate: true }
-    );
+    // Funkcja do ładowania danych dla wybranego dnia
+    const loadDataForDate = (date) => {
+      console.log("DailyDataForm: loadDataForDate called for:", date);
+      console.log("DailyDataForm: personData:", props.personData);
 
-    // Funkcja do ustawiania danych z rodzica
-    const setStatsData = (statsData) => {
-      console.log("setStatsData called with:", statsData);
-      if (statsData) {
-        console.log("Setting form data from existing stats");
-        console.log("Before:", dailyStats);
+      if (!props.personData || !props.personData.dailyStats) {
+        console.log("No personData or dailyStats available");
+        resetToDefaults();
+        return;
+      }
+
+      // Znajdź dane dla tego dnia
+      const statsForDate = props.personData.dailyStats.find(
+        (stat) => stat.date === date
+      );
+
+      console.log("DailyDataForm: Found stats for date:", statsForDate);
+
+      if (statsForDate) {
+        console.log("DailyDataForm: Setting form data from existing stats");
         Object.assign(dailyStats, {
-          calories: statsData.calories || 0,
-          steps: statsData.steps || 0,
-          protein: statsData.protein || 0,
-          weight: statsData.weight || null,
-          supplements: statsData.supplements === true, // Dokładnie true/false
+          calories: statsForDate.calories || 0,
+          steps: statsForDate.steps || 0,
+          protein: statsForDate.protein || 0,
+          weight:
+            statsForDate.weight !== undefined ? statsForDate.weight : null,
+          supplements: statsForDate.supplements === true,
         });
-        console.log("After:", dailyStats);
       } else {
-        console.log("No existing data, resetting to defaults");
+        console.log("DailyDataForm: No existing data, resetting to defaults");
         resetToDefaults();
       }
     };
 
-    // Eksponuj metody dla rodzica
-    defineExpose({
-      setStatsData,
-    });
+    // Obserwuj zmiany wybranego dnia i ładuj dane
+    watch(
+      () => props.selectedDate,
+      (newDate) => {
+        console.log("DailyDataForm: selectedDate changed to:", newDate);
+        loadDataForDate(newDate);
+      },
+      { immediate: true }
+    );
+
+    // Obserwuj zmiany personData
+    watch(
+      () => props.personData,
+      () => {
+        console.log(
+          "DailyDataForm: personData changed, reloading for:",
+          props.selectedDate
+        );
+        loadDataForDate(props.selectedDate);
+      },
+      { deep: true }
+    );
 
     return {
       dailyStats,
       saveDailyStats,
-      setStatsData,
     };
   },
 };
