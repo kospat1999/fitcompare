@@ -3,11 +3,14 @@
     <div class="person-header">
       <h3 class="person-title">{{ person.name }}</h3>
       <button class="dumbbell-btn">
-        <img
-          :src="person.avatar || '/dogpatka.jpg'"
-          :alt="person.name"
-          class="avatar-image"
-        />
+        <div class="avatar-container">
+          <img
+            :src="person.avatar || '/dogpatka.jpg'"
+            :alt="person.name"
+            class="avatar-image"
+          />
+          <div v-if="person.name === 'Fiko'" class="tooltip">kloc</div>
+        </div>
       </button>
     </div>
 
@@ -307,7 +310,6 @@ export default {
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 8px rgba(255, 127, 39, 0.3);
-  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -320,10 +322,49 @@ export default {
   border-radius: 50%;
 }
 
-.dumbbell-btn:hover {
-  background: linear-gradient(145deg, #00a060, #008050);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(255, 127, 39, 0.4);
+.avatar-container {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  height: 100%;
+}
+
+.tooltip {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  z-index: 9999;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+.tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #333 transparent transparent transparent;
+}
+
+.avatar-container:hover .tooltip,
+.dumbbell-btn:hover .tooltip {
+  visibility: visible;
+  opacity: 1;
 }
 
 .trainings-section {

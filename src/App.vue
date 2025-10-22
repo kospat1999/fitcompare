@@ -137,11 +137,14 @@
             <div class="summary-cards">
               <div class="summary-card" v-if="fikoWeeklyAverages.daysCount > 0">
                 <div class="summary-header">
-                  <img
-                    :src="persons[0].avatar"
-                    :alt="persons[0].name"
-                    class="summary-avatar"
-                  />
+                  <div class="avatar-container">
+                    <img
+                      :src="persons[0].avatar"
+                      :alt="persons[0].name"
+                      class="summary-avatar"
+                    />
+                    <div class="tooltip">kloc</div>
+                  </div>
                   <h4>{{ persons[0].name }}</h4>
                 </div>
                 <div class="summary-stats">
@@ -160,6 +163,12 @@
                   <div class="stat-item">
                     <span class="label">Białko:</span>
                     <span class="value">{{ fikoWeeklyAverages.protein }}g</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="label">Treningi:</span>
+                    <span class="value">{{
+                      fikoWeeklyAverages.trainingsCount
+                    }}</span>
                   </div>
                 </div>
               </div>
@@ -194,6 +203,12 @@
                       >{{ patkaWeeklyAverages.protein }}g</span
                     >
                   </div>
+                  <div class="stat-item">
+                    <span class="label">Treningi:</span>
+                    <span class="value">{{
+                      patkaWeeklyAverages.trainingsCount
+                    }}</span>
+                  </div>
                 </div>
               </div>
               <div
@@ -217,11 +232,14 @@
             <div class="summary-cards">
               <div class="summary-card" v-if="fikoWeightLoss.hasData">
                 <div class="summary-header">
-                  <img
-                    :src="persons[0].avatar"
-                    :alt="persons[0].name"
-                    class="summary-avatar"
-                  />
+                  <div class="avatar-container">
+                    <img
+                      :src="persons[0].avatar"
+                      :alt="persons[0].name"
+                      class="summary-avatar"
+                    />
+                    <div class="tooltip">kloc</div>
+                  </div>
                   <h4>{{ persons[0].name }}</h4>
                 </div>
                 <div class="summary-stats">
@@ -382,11 +400,16 @@
 
           <div class="user-info-card">
             <div class="user-avatar">
-              <img
-                :src="getCurrentUserAvatar()"
-                :alt="currentUser.name"
-                class="avatar-image"
-              />
+              <div class="avatar-container">
+                <img
+                  :src="getCurrentUserAvatar()"
+                  :alt="currentUser.name"
+                  class="avatar-image"
+                />
+                <div v-if="currentUser.name === 'Fiko'" class="tooltip">
+                  kloc
+                </div>
+              </div>
             </div>
             <div class="user-details">
               <h3 class="user-name">{{ currentUser.name }}</h3>
@@ -423,11 +446,16 @@
 
           <div class="user-info-card">
             <div class="user-avatar">
-              <img
-                :src="getCurrentUserAvatar()"
-                :alt="currentUser.name"
-                class="avatar-image"
-              />
+              <div class="avatar-container">
+                <img
+                  :src="getCurrentUserAvatar()"
+                  :alt="currentUser.name"
+                  class="avatar-image"
+                />
+                <div v-if="currentUser.name === 'Fiko'" class="tooltip">
+                  kloc
+                </div>
+              </div>
             </div>
             <div class="user-details">
               <h3 class="user-name">{{ currentUser.name }}</h3>
@@ -605,6 +633,20 @@ export default {
 
     const formatComparisonDate = computed(() => {
       const date = new Date(selectedComparisonDate.value);
+
+      // Dodaj "(dzień loda)" dla środy w nazwie dnia
+      if (date.getDay() === 3) {
+        // 3 = środa
+        const weekday = "środa (dzień loda)";
+        const restOfDate = date.toLocaleDateString("pl-PL", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+        return `${weekday}, ${restOfDate}`;
+      }
+
+      // Dla innych dni - normalne formatowanie
       return date.toLocaleDateString("pl-PL", {
         weekday: "long",
         year: "numeric",
@@ -694,7 +736,13 @@ export default {
     const getWeeklyAverages = (personIndex) => {
       const person = persons.value[personIndex];
       if (!person.dailyStats || person.dailyStats.length === 0) {
-        return { steps: 0, calories: 0, protein: 0, daysCount: 0 };
+        return {
+          steps: 0,
+          calories: 0,
+          protein: 0,
+          daysCount: 0,
+          trainingsCount: 0,
+        };
       }
 
       const today = new Date();
@@ -707,8 +755,20 @@ export default {
         return statDate >= weekAgo && statDate <= today;
       });
 
+      // Filtruj treningi z ostatniego tygodnia
+      const weeklyTrainings = person.trainings.filter((training) => {
+        const trainingDate = new Date(training.date);
+        return trainingDate >= weekAgo && trainingDate <= today;
+      });
+
       if (weeklyStats.length === 0) {
-        return { steps: 0, calories: 0, protein: 0, daysCount: 0 };
+        return {
+          steps: 0,
+          calories: 0,
+          protein: 0,
+          daysCount: 0,
+          trainingsCount: weeklyTrainings.length,
+        };
       }
 
       // Oblicz średnie tylko z dni, które mają dane
@@ -717,7 +777,13 @@ export default {
       );
 
       if (validStats.length === 0) {
-        return { steps: 0, calories: 0, protein: 0, daysCount: 0 };
+        return {
+          steps: 0,
+          calories: 0,
+          protein: 0,
+          daysCount: 0,
+          trainingsCount: weeklyTrainings.length,
+        };
       }
 
       const totalSteps = validStats.reduce(
@@ -738,6 +804,7 @@ export default {
         calories: Math.round(totalCalories / validStats.length),
         protein: Math.round(totalProtein / validStats.length),
         daysCount: validStats.length,
+        trainingsCount: weeklyTrainings.length,
       };
     };
 
