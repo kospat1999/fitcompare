@@ -89,8 +89,7 @@ body {
   padding: 4px;
   border-radius: 16px;
   border: 1px solid #333;
-  box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.4),
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
   width: fit-content;
 }
@@ -138,8 +137,7 @@ body {
 .nav-tab.active {
   color: #fff;
   background: linear-gradient(135deg, #00c073, #00a060);
-  box-shadow: 
-    0 4px 16px rgba(0, 192, 115, 0.4),
+  box-shadow: 0 4px 16px rgba(0, 192, 115, 0.4),
     0 0 0 1px rgba(0, 192, 115, 0.2);
   transform: translateY(-2px);
 }
@@ -479,27 +477,77 @@ body {
   .summary-cards {
     grid-template-columns: 1fr;
   }
-  
+
   .summary-card {
     padding: 16px;
   }
-  
+
   .summary-title {
     font-size: 18px;
   }
-}
+
   .header {
-    padding: 12px 16px;
-    flex-wrap: wrap;
-    gap: 12px;
+    padding: 8px 12px;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
   }
 
   .header-left {
-    gap: 16px;
+    display: none;
+  }
+
+  .header-center {
+    order: 1;
+    justify-content: center;
   }
 
   .header-right {
+    order: 2;
+    justify-content: center;
+    flex-direction: row;
     gap: 12px;
+  }
+
+  .nav-tab {
+    min-width: 60px;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .user-details {
+    display: none;
+  }
+
+  .challenge-counter {
+    font-size: 11px;
+    color: #ff6b6b;
+  }
+
+  .logout-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 6px 8px;
+  }
+
+  .nav-tab {
+    min-width: 50px;
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  .challenge-counter {
+    font-size: 10px;
+  }
+
+  .logout-btn {
+    padding: 4px 8px;
+    font-size: 11px;
   }
 
   .logo-icon {
@@ -631,23 +679,20 @@ body {
   justify-content: center;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  box-shadow: 
-    0 3px 6px rgba(0, 0, 0, 0.3),
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .calendar-btn:hover {
   background: linear-gradient(145deg, #4a4a4a, #3a3a3a);
   transform: translateY(-1px);
-  box-shadow: 
-    0 4px 8px rgba(0, 0, 0, 0.4),
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .calendar-btn:active {
   transform: translateY(0);
-  box-shadow: 
-    0 2px 4px rgba(0, 0, 0, 0.3),
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
